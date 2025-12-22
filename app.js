@@ -1,5 +1,5 @@
 const express = require('express')
-const whatsappRoutes = require('./routes/whatsapp.routes')
+const whatsappRoutes = require('./src/routes/whatsapp.routes')
 
 const app = express()
 
