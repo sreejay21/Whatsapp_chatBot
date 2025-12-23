@@ -1,5 +1,6 @@
 const whatsAppRepo = require("../repositories/whatsappWebhook.repository");
 const { encrypt, decrypt } = require("../config/crypto.util");
+const { sanitizeWhatsAppPayload } = require("../config/whatsappPayload.util");
 
 // Webhook verification
 const verifyWebhook = (req, res) => {
@@ -36,7 +37,7 @@ const handleWebhook = async (req, res) => {
         textBody: messages.type === "text" ? messages.text.body : undefined,
         interactiveData:
           messages.type === "interactive" ? messages.interactive : undefined,
-        rawPayload: value,
+        rawPayload: sanitizeWhatsAppPayload(value), 
       });
 
       if (messages.type === "text") {
