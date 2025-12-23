@@ -1,5 +1,5 @@
 const whatsAppRepo = require("../repositories/whatsappWebhook.repository");
-const { encrypt, decrypt } = require("src/config/crypto.utils");
+const { encrypt, decrypt } = require("../config/crypto.util");
 
 // Webhook verification
 const verifyWebhook = (req, res) => {
