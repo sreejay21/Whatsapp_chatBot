@@ -1,22 +1,38 @@
 const whatsAppRepository = require('../repositories/whatsapp.repository')
+const { encrypt } = require("../config/crypto.util");
+const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 
 const sendTextMessage = async (req, res) => {
   try {
     const { to, message } = req.body
 
-    const payload = {
+    const messagePayload = {
       messaging_product: 'whatsapp',
       to,
       type: 'text',
       text: { body: message }
     }
 
-    const response = await whatsAppRepository.sendMessage(payload)
+    // Send message to WhatsApp
+    const response = await whatsAppRepository.sendMessage(messagePayload)
+
+    const outgoingMessage = {
+      to: encrypt(to),
+      type: 'text',
+      whatsappMessageId: response?.messages?.[0]?.id || null,
+      status: 'SENT',
+      requestPayload: sanitizeOutgoingPayload(messagePayload),
+      responsePayload: sanitizeOutgoingPayload(response)
+    }
+
+    await whatsAppRepository.saveOutgoingMessage(outgoingMessage)
+
     res.status(200).json(response)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 }
+
 
 const sendTemplateMessage = async (req, res) => {
   try {
@@ -84,7 +100,7 @@ const sendHelloWorldTemplate = async (req, res) => {
   try {
     const { to } = req.body
 
-    const payload = {
+    const messagePayload = {
       messaging_product: 'whatsapp',
       to,
       type: 'template',
@@ -94,13 +110,25 @@ const sendHelloWorldTemplate = async (req, res) => {
       }
     }
 
-    const response = await whatsAppRepository.sendMessage(payload)
+    // Send message to WhatsApp
+    const response = await whatsAppRepository.sendMessage(messagePayload)
+
+    const outgoingMessage = {
+      to: encrypt(to),
+      type: 'template',
+      whatsappMessageId: response?.messages?.[0]?.id || null,
+      status: 'SENT',
+      requestPayload: sanitizeOutgoingPayload(messagePayload),
+      responsePayload: sanitizeOutgoingPayload(response)
+    }
+
+    await whatsAppRepository.saveOutgoingMessage(outgoingMessage)
+
     res.status(200).json(response)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 }
-
 module.exports = {
   sendTextMessage,
   sendTemplateMessage,

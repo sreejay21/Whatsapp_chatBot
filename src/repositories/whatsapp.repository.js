@@ -19,16 +19,18 @@ const sendMessage = async (payload) => {
       "Content-Type": "application/json",
     },
   });
+   return response.data;
+}
 
-  const messageData = {
-    to: payload.to,
+  const saveOutgoingMessage = async (payload) => {
+  return await WhatsappOutgoingMessage.create({
+    to: payload.to, // encrypted already
     type: payload.type,
-    requestPayload: payload,
-    responsePayload: response.data,
-    whatsappMessageId: response.data.messages?.[0]?.id,
-  };
-
-  return await WhatsappOutgoingMessage.create(messageData);
+    requestPayload: payload.requestPayload,
+    responsePayload: payload.responsePayload,
+    whatsappMessageId: payload.whatsappMessageId,
+    status: payload.status,
+  });
 };
 
 const uploadImage = async (filePath) => {
@@ -47,4 +49,4 @@ const uploadImage = async (filePath) => {
   return response.data;
 };
 
-module.exports = { createMessagePayload, sendMessage, uploadImage };
+module.exports = { createMessagePayload, sendMessage, uploadImage, saveOutgoingMessage };
