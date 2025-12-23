@@ -10,6 +10,6 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/whatsapp", whatsappRoutes);
-app.use("/api/whatsapp/webhook", whatsappWebhookRoutes);
+app.use("/webhook", whatsappWebhookRoutes);
 
 module.exports = app;

@@ -1,27 +1,38 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
 
-const whatsappWebhookMessageSchema = new mongoose.Schema(
+const incomingWhatsappMessageSchema = new mongoose.Schema(
   {
     from: { type: String, required: true },
     type: {
       type: String,
-      enum: ['text', 'image', 'video', 'audio', 'document', 'interactive', 'status'],
-      required: true
+      enum: [
+        "text",
+        "image",
+        "video",
+        "audio",
+        "document",
+        "interactive",
+        "status",
+      ],
+      required: true,
     },
     messageId: { type: String },
     status: {
       type: String,
-      enum: ['sent', 'delivered', 'read', 'failed', 'unknown'],
-      default: 'unknown'
+      enum: ["sent", "delivered", "read", "failed", "unknown"],
+      default: "unknown",
     },
     textBody: { type: String },
     interactiveData: { type: Object },
     statusData: { type: Object },
-    rawPayload: { type: Object, required: true }
+    rawPayload: { type: Object, required: true },
   },
-  { timestamps: true }
-)
+  { timestamps: true },
+);
 
-const WhatsappWebhookMessage = mongoose.model('WhatsappWebhookMessage', whatsappWebhookMessageSchema)
+const incomingWhatsappMessage = mongoose.model(
+  "WhatsappWebhookMessage",
+  incomingWhatsappMessageSchema,
+);
 
-module.exports = WhatsappWebhookMessage
+module.exports = incomingWhatsappMessage;
