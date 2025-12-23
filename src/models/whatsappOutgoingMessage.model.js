@@ -30,7 +30,7 @@ const outgoingWhatsappMessageSchema = new mongoose.Schema(
 );
 
 const outgoingWhatsappMessage = mongoose.model(
-  "outgoingMessage",
+  "outgoingWhatsappMessage",
   outgoingWhatsappMessageSchema,
 );
 

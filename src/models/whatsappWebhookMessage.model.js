@@ -16,22 +16,31 @@ const incomingWhatsappMessageSchema = new mongoose.Schema(
       ],
       required: true,
     },
-    messageId: { type: String },
+    messageId: { type: String, required: true, unique: true },
     status: {
       type: String,
       enum: ["sent", "delivered", "read", "failed", "unknown"],
-      default: "unknown",
+      default: "delivered",
     },
     textBody: { type: String },
     interactiveData: { type: Object },
     statusData: { type: Object },
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          enum: ["sent", "delivered", "read", "failed", "unknown"],
+        },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
     rawPayload: { type: Object, required: true },
   },
   { timestamps: true },
 );
 
 const incomingWhatsappMessage = mongoose.model(
-  "WhatsappWebhookMessage",
+  "incomingWhatsappMessage",
   incomingWhatsappMessageSchema,
 );
 
