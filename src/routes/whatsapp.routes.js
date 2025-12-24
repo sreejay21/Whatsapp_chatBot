@@ -1,5 +1,5 @@
 const express = require('express')
-const whatAppController = require('../controllers/whatsapp.controller')
+const whatAppController = require('../controllers/whatsappOutgoing.controller')
 
 const router = express.Router()
 

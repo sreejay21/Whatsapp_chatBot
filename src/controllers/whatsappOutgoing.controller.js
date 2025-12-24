@@ -1,4 +1,4 @@
-const whatsAppRepository = require('../repositories/whatsapp.repository')
+const whatsAppRepository = require('../repositories/whatsappOutgoing.repository');
 const { encrypt } = require("../config/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 
