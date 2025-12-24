@@ -1,5 +1,6 @@
 const whatsappUserRepo = require("../repositories/whatsappUser.repository");
 const { encrypt, decrypt } = require("../config/crypto.util");
+const responseHandler = require("../utils/response.handler");
 
 // Save or update WhatsApp user
 const saveWhatsappUser = async (webhookValue) => {
@@ -48,17 +49,14 @@ const listWhatsappUsers = async (req, res) => {
       _id: encrypt(user._id.toString()),
     }));
 
-    return res.status(200).json({
+    return responseHandler.Ok({
       success: true,
       data: users,
       pagination: result.pagination,
-    });
+    }, res);
   } catch (err) {
     console.error("Error listing WhatsApp users:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch WhatsApp users",
-    });
+    return responseHandler.internalServerError(res, "Failed to fetch WhatsApp users");
   }
 };
 

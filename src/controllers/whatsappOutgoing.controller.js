@@ -1,6 +1,7 @@
 const whatsAppRepository = require('../repositories/whatsappOutgoing.repository');
 const { encrypt } = require("../config/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
+const responseHandler = require("../utils/response.handler");
 
 const sendTextMessage = async (req, res) => {
   try {
@@ -27,9 +28,9 @@ const sendTextMessage = async (req, res) => {
 
     await whatsAppRepository.saveOutgoingMessage(outgoingMessage)
 
-    res.status(200).json(response)
+    responseHandler.Ok(response, res)
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    responseHandler.internalServerError(res, err.message)
   }
 }
 
@@ -59,9 +60,9 @@ const sendTemplateMessage = async (req, res) => {
     }
 
     const response = await whatsAppRepository.sendMessage(payload)
-    res.status(200).json(response)
+    responseHandler.Ok(response, res)
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    responseHandler.internalServerError(res, err.message)
   }
 }
 
@@ -80,18 +81,18 @@ const sendMediaMessage = async (req, res) => {
     }
 
     const response = await whatsAppRepository.sendMessage(payload)
-    res.status(200).json(response)
+    responseHandler.Ok(response, res)
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    responseHandler.internalServerError(res, err.message)
   }
 }
 
 const uploadImageController = async (req, res) => {
   try {
     const response = await whatsAppRepository.uploadImage(`${process.cwd()}/logo.png`)
-    res.status(200).json(response)
+    responseHandler.Ok(response, res)
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    responseHandler.internalServerError(res, err.message)
   }
 }
 
@@ -124,9 +125,9 @@ const sendHelloWorldTemplate = async (req, res) => {
 
     await whatsAppRepository.saveOutgoingMessage(outgoingMessage)
 
-    res.status(200).json(response)
+    responseHandler.Ok(response, res)
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    responseHandler.internalServerError(res, err.message)
   }
 }
 module.exports = {

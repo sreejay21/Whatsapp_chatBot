@@ -2,6 +2,7 @@ const whatsAppRepo = require("../repositories/whatsappWebhook.repository");
 const { encrypt, decrypt } = require("../config/crypto.util");
 const { sanitizeWhatsAppPayload } = require("../config/whatsappPayload.util");
 const { saveWhatsappUser } = require("../controllers/whatsappUser.controller");
+const responseHandler = require("../utils/response.handler");
 
 // Webhook verification
 const verifyWebhook = (req, res) => {
@@ -10,9 +11,9 @@ const verifyWebhook = (req, res) => {
   const token = req.query["hub.verify_token"];
 
   if (mode && token === process.env.WEBHOOK_VERIFY_TOKEN) {
-    return res.status(200).send(challenge);
+    return responseHandler.Ok(challenge, res);
   }
-  return res.sendStatus(403);
+  return responseHandler.forbidden(res);
 };
 
 // Webhook handler
@@ -23,7 +24,7 @@ const handleWebhook = async (req, res) => {
     console.log(JSON.stringify(req.body, null, 2));
     const entry = req.body.entry?.[0];
     const value = entry?.changes?.[0]?.value;
-    if (!value) return res.sendStatus(200);
+    if (!value) return responseHandler.noContent(res);
 
     const statuses = value.statuses?.[0];
     const messages = value.messages?.[0];
@@ -68,10 +69,10 @@ const handleWebhook = async (req, res) => {
       console.log(`Message ${statuses.id} updated to status: ${messageStatus}`);
     }
 
-    res.status(200).send("Webhook processed");
+    responseHandler.Ok("Webhook processed", res);
   } catch (err) {
     console.error(err);
-    res.status(500).send(err.message);
+    responseHandler.internalServerError(res, err.message);
   }
 };
 
