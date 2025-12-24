@@ -12,8 +12,32 @@ const updateUserName = async (userId, name) => {
   return await WhatsappUser.findByIdAndUpdate(userId, { name }, { new: true });
 };
 
+const listUsers = async ({ page = 1, limit = 20 } = {}) => {
+  const skip = (page - 1) * limit;
+
+  const [users, total] = await Promise.all([
+    WhatsappUser.find({})
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    WhatsappUser.countDocuments(),
+  ]);
+
+  return {
+    users,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
 module.exports = {
   findByEncryptedPhone,
   createUser,
   updateUserName,
+  listUsers,
 };
