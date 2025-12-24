@@ -2,6 +2,7 @@ const express = require("express");
 const whatsappRoutes = require("./src/routes/whatsapp.routes");
 const whatsappWebhookRoutes = require("./src/routes/whatsappWebhook.route");
 const whatsappUserRoutes = require("./src/routes/whatsappUser.routes");
+const whatsappChatRoutes = require("./src/routes/whatsAppChat.routes");
 const app = express();
 
 app.use(express.json());
@@ -13,5 +14,6 @@ app.get("/", (req, res) => {
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/webhook", whatsappWebhookRoutes);
 app.use("/api/whatsapp-users", whatsappUserRoutes);
+app.use("/api/whatsapp-chats", whatsappChatRoutes);
 
 module.exports = app;
