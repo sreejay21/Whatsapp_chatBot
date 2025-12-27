@@ -80,6 +80,18 @@ const sendMediaMessage = async (req, res) => {
     };
 
     const response = await whatsAppRepository.sendMessage(payload);
+
+    const outgoingMessage = {
+      to: encrypt(to),
+      type: "document",
+      whatsappMessageId: response?.messages?.[0]?.id || null,
+      status: "SENT",
+      requestPayload: sanitizeOutgoingPayload(payload),
+      responsePayload: sanitizeOutgoingPayload(response.data),
+    };
+
+    await whatsAppRepository.saveOutgoingMessage(outgoingMessage);
+
     responseHandler.Ok(response, res);
   } catch (err) {
     responseHandler.internalServerError(res, err.message);
@@ -102,6 +114,18 @@ const sendImage = async (req, res) => {
     };
 
     const response = await whatsAppRepository.sendMessage(payload);
+
+    const outgoingMessage = {
+      to: encrypt(to),
+      type: "image",
+      whatsappMessageId: response?.messages?.[0]?.id || null,
+      status: "SENT",
+      requestPayload: sanitizeOutgoingPayload(payload),
+      responsePayload: sanitizeOutgoingPayload(response.data),
+    };
+
+    await whatsAppRepository.saveOutgoingMessage(outgoingMessage);
+
     responseHandler.Ok(response, res);
   } catch (err) {
     responseHandler.internalServerError(res, err.message);
