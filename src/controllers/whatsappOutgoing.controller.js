@@ -2,6 +2,7 @@ const whatsAppRepository = require("../repositories/whatsappOutgoing.repository"
 const { encrypt } = require("../config/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 const responseHandler = require("../utils/response.handler");
+const fs = require("fs");
 
 const sendTextMessage = async (req, res) => {
   try {
@@ -98,9 +99,9 @@ const sendMediaMessage = async (req, res) => {
   }
 };
 
-// Send a Image to a WhatsApp user
+// Send a Image to a WhatsApp user via a link
 
-const sendImage = async (req, res) => {
+const sendImageViaLink = async (req, res) => {
   try {
     const { to, link } = req.body;
 
@@ -135,11 +136,30 @@ const sendImage = async (req, res) => {
 const uploadImageController = async (req, res) => {
   try {
     const response = await whatsAppRepository.uploadImage(
-      `${process.cwd()}/logo.png`,
+      req.file.path,
+      req.file.mimetype,
     );
+
+    await whatsAppRepository.saveOutgoingMessage({
+      to: req.body.to,
+      type: "image",
+      whatsappMediaId: response.id,
+      status: "UPLOADED",
+      requestPayload: sanitizeOutgoingPayload({
+        fileName: req.file.originalname,
+        mimeType: req.file.mimetype,
+      }),
+      responsePayload: sanitizeOutgoingPayload(response),
+    });
+
     responseHandler.Ok(response, res);
   } catch (err) {
-    responseHandler.internalServerError(res, err.message);
+    console.error("Upload Error:", err.response?.data || err.message);
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    responseHandler.internalServerError(res, err.response?.data || err.message);
   }
 };
 
@@ -176,11 +196,46 @@ const sendHelloWorldTemplate = async (req, res) => {
     responseHandler.internalServerError(res, err.message);
   }
 };
+
+// Upload and send image to WhatsApp user
+const uploadAndSendImageController = async (req, res) => {
+  try {
+    const { to, caption } = req.body;
+
+    const uploadResponse = await whatsAppRepository.uploadImage(
+      req.file.path,
+      req.file.mimetype,
+    );
+
+    const sendResponse = await whatsAppRepository.sendImageMessage({
+      to,
+      mediaId: uploadResponse.id,
+      caption,
+    });
+
+    await whatsAppRepository.saveOutgoingMessage({
+      to,
+      type: "image",
+      whatsappMediaId: uploadResponse.id,
+      whatsappMessageId: sendResponse.messages?.[0]?.id,
+      status: "SENT",
+      requestPayload: { caption },
+      responsePayload: sendResponse,
+    });
+
+    responseHandler.Ok(sendResponse, res);
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    responseHandler.internalServerError(res, err.response?.data || err.message);
+  }
+};
+
 module.exports = {
   sendTextMessage,
   sendTemplateMessage,
   sendMediaMessage,
   uploadImageController,
   sendHelloWorldTemplate,
-  sendImage,
+  sendImageViaLink,
+  uploadAndSendImageController,
 };

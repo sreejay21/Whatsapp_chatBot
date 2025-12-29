@@ -19,10 +19,10 @@ const sendMessage = async (payload) => {
       "Content-Type": "application/json",
     },
   });
-   return response.data;
-}
+  return response.data;
+};
 
-  const saveOutgoingMessage = async (payload) => {
+const saveOutgoingMessage = async (payload) => {
   return await WhatsappOutgoingMessage.create({
     to: payload.to, // encrypted already
     type: payload.type,
@@ -33,20 +33,59 @@ const sendMessage = async (payload) => {
   });
 };
 
-const uploadImage = async (filePath) => {
+// Upload image to WhatsApp
+const uploadImage = async (filePath, mimeType) => {
+  if (!fs.existsSync(filePath)) {
+    throw new Error("File does not exist");
+  }
+
   const data = new FormData();
   data.append("messaging_product", "whatsapp");
-  data.append("file", fs.createReadStream(filePath));
-  data.append("type", "image/png");
 
-  const response = await axios.post(`${BASE_URL}/media`, data, {
+  data.append("file", fs.createReadStream(filePath), {
+    contentType: mimeType,
+  });
+
+  try {
+    const response = await axios.post(`${BASE_URL}/media`, data, {
+      headers: {
+        Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+        ...data.getHeaders(),
+      },
+    });
+
+    return response.data;
+  } catch (err) {
+    console.error("WhatsApp Media Upload Error:", err.response?.data);
+    throw err;
+  }
+};
+
+const sendImageMessage = async ({ to, mediaId, caption }) => {
+  const payload = {
+    messaging_product: "whatsapp",
+    to,
+    type: "image",
+    image: {
+      id: mediaId,
+      ...(caption && { caption }),
+    },
+  };
+
+  const response = await axios.post(`${BASE_URL}/messages`, payload, {
     headers: {
       Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-      ...data.getHeaders(),
+      "Content-Type": "application/json",
     },
   });
 
   return response.data;
 };
 
-module.exports = { createMessagePayload, sendMessage, uploadImage, saveOutgoingMessage };
+module.exports = {
+  createMessagePayload,
+  sendMessage,
+  uploadImage,
+  saveOutgoingMessage,
+  sendImageMessage,
+};
