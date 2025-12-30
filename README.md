@@ -10,6 +10,7 @@ This project provides a robust backend for a WhatsApp Chatbot using the WhatsApp
   - [Outgoing Messages](#outgoing-messages)
   - [User Management](#user-management)
 - [Response Format](#response-format)
+- [Postman Collection](#postman-collection)
 
 ---
 
@@ -25,7 +26,7 @@ Ensure you have your environment variables configured in a `.env` file:
 ---
 
 ## Base URL
-`http://localhost:5000` (or your deployed URL)
+`https://7cc34c28-0572-495d-b43b-dfe56fb4ad13-00-3mdfjw20ajpxf.pike.replit.dev`
 
 ---
 
@@ -34,11 +35,14 @@ Ensure you have your environment variables configured in a `.env` file:
 ### Webhook
 #### Verify Webhook
 `GET /webhook`
-Used by Meta to verify your webhook endpoint.
+- **Query Params:**
+  - `hub.mode`: `subscribe`
+  - `hub.challenge`: `ANY_STRING`
+  - `hub.verify_token`: Your `WEBHOOK_VERIFY_TOKEN`
 
 #### Handle Webhook Events
 `POST /webhook`
-Receives incoming messages and status updates from WhatsApp.
+- Receives incoming messages and status updates from WhatsApp.
 
 ---
 
@@ -91,11 +95,10 @@ Receives incoming messages and status updates from WhatsApp.
 
 #### Send Media (File Upload)
 `POST /api/whatsapp/send-media-upload`
-*Content-Type: multipart/form-data*
-
-**Form Data:**
-- `file`: (Binary File)
-- `to`: 1234567890
+- **Content-Type:** `multipart/form-data`
+- **Form Data:**
+  - `file`: (Binary File)
+  - `to`: `1234567890`
 
 ---
 
@@ -134,7 +137,7 @@ Receives incoming messages and status updates from WhatsApp.
 ---
 
 ## Response Format
-All API responses follow a consistent format managed by `src/utils/response.handler.js`:
+All API responses follow a consistent format:
 
 **Success Response:**
 ```json
@@ -153,3 +156,14 @@ All API responses follow a consistent format managed by `src/utils/response.hand
   "error": "Error message details"
 }
 ```
+
+---
+
+## Postman Collection
+A pre-configured Postman collection is available in the root directory: `whatsapp-chatbot.postman_collection.json`. 
+
+To use it:
+1. Open Postman.
+2. Click **Import**.
+3. Select `whatsapp-chatbot.postman_collection.json`.
+4. The `baseUrl` and endpoints will be pre-filled for your environment.
