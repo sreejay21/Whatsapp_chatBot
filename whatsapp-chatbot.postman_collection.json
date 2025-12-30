@@ -1,0 +1,227 @@
+{
+	"info": {
+		"_postman_id": "whatsapp-chatbot-collection",
+		"name": "WhatsApp Chatbot API",
+		"description": "Collection for WhatsApp Chatbot API endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Webhook",
+			"item": [
+				{
+					"name": "Verify Webhook",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/webhook?hub.mode=subscribe&hub.challenge=1234&hub.verify_token={{verifyToken}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhook"
+							],
+							"query": [
+								{
+									"key": "hub.mode",
+									"value": "subscribe"
+								},
+								{
+									"key": "hub.challenge",
+									"value": "1234"
+								},
+								{
+									"key": "hub.verify_token",
+									"value": "{{verifyToken}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Handle Webhook",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"object\": \"whatsapp_business_account\",\n    \"entry\": [\n        {\n            \"id\": \"12345\",\n            \"changes\": [\n                {\n                    \"value\": {\n                        \"messaging_product\": \"whatsapp\",\n                        \"metadata\": {\n                            \"display_phone_number\": \"123456789\",\n                            \"phone_number_id\": \"12345\"\n                        },\n                        \"contacts\": [\n                            {\n                                \"profile\": {\n                                    \"name\": \"John Doe\"\n                                },\n                                \"wa_id\": \"1234567890\"\n                            }\n                        ],\n                        \"messages\": [\n                            {\n                                \"from\": \"1234567890\",\n                                \"id\": \"wamid.HBgLMTIzNDU2Nzg5MFUVMzBGRDM2RTBDRDRCM0E3N0IAA=\",\n                                \"timestamp\": \"1623054123\",\n                                \"text\": {\n                                    \"body\": \"hi\"\n                                },\n                                \"type\": \"text\"\n                            }\n                        ]\n                    },\n                    \"field\": \"messages\"\n                }\n            ]\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhook"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Outgoing Messages",
+			"item": [
+				{
+					"name": "Send Text",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"to\": \"1234567890\",\n    \"message\": \"Hello from Postman!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/whatsapp/send-text",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"send-text"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Template",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"to\": \"1234567890\",\n    \"name\": \"John\",\n    \"discount\": \"10%\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/whatsapp/send-template",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"send-template"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Hello World",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"to\": \"1234567890\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/whatsapp/send-hello-world-template",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"send-hello-world-template"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/whatsapp-user/listUser?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"whatsapp-user",
+								"listUser"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://7cc34c28-0572-495d-b43b-dfe56fb4ad13-00-3mdfjw20ajpxf.pike.replit.dev",
+			"type": "string"
+		},
+		{
+			"key": "verifyToken",
+			"value": "your_verify_token_here",
+			"type": "string"
+		}
+	]
+}
