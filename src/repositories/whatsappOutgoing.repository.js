@@ -3,6 +3,7 @@ const FormData = require("form-data");
 const fs = require("fs");
 const WhatsappOutgoingMessage = require("../models/whatsappOutgoingMessage.model");
 require("dotenv").config();
+const path = require("path");
 
 const BASE_URL = `${process.env.WHATSAPP_BASE_URL}/${process.env.WHATSAPP_API_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}`;
 
@@ -82,10 +83,61 @@ const sendImageMessage = async ({ to, mediaId, caption }) => {
   return response.data;
 };
 
+// Upload document to WhatsApp
+const sendDocumentMessage = async ({ to, mediaId, caption, filename }) => {
+  const payload = {
+    messaging_product: "whatsapp",
+    to,
+    type: "document",
+    document: {
+      id: mediaId,
+      caption,
+      filename,
+    },
+  };
+
+  const response = await axios.post(`${BASE_URL}/messages`, payload, {
+    headers: {
+      Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  return response.data;
+};
+
+// Upload document to WhatsApp
+
+const uploadDocument = async (filePath, mimeType) => {
+  if (!fs.existsSync(filePath)) {
+    throw new Error("File does not exist");
+  }
+
+  const formData = new FormData();
+
+  formData.append("file", fs.createReadStream(filePath), {
+    contentType: mimeType,
+    filename: path.basename(filePath),
+  });
+
+  formData.append("messaging_product", "whatsapp");
+
+  const response = await axios.post(`${BASE_URL}/media`, formData, {
+    headers: {
+      Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+      ...formData.getHeaders(),
+    },
+  });
+
+  return response.data;
+};
+
 module.exports = {
   createMessagePayload,
   sendMessage,
   uploadImage,
   saveOutgoingMessage,
   sendImageMessage,
+  sendDocumentMessage,
+  uploadDocument,
 };

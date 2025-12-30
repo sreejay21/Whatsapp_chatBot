@@ -8,7 +8,7 @@ const outgoingWhatsappMessageSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["text", "template", "image"],
+      enum: ["text", "template", "image", "document"],
       required: true,
     },
     requestPayload: {

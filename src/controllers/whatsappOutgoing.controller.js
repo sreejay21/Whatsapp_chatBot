@@ -4,40 +4,64 @@ const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 const responseHandler = require("../utils/response.handler");
 const fs = require("fs");
 
+// --- Helper: encrypt WhatsApp response for client
+const encryptWhatsappResponseForClient = (response, encryptedTo) => {
+  if (!response?.contacts?.length) return response;
+
+  return {
+    ...response,
+    contacts: response.contacts.map(() => ({
+      input: encryptedTo,
+      wa_id: encryptedTo,
+    })),
+  };
+};
+
+// --- Helper: consistent error handling
+const handleError = (res, err) => {
+  console.error(err.response?.data || err.message);
+  responseHandler.internalServerError(res, err.response?.data || err.message);
+};
+
+// --- Text message
 const sendTextMessage = async (req, res) => {
   try {
     const { to, message } = req.body;
+    const encryptedTo = encrypt(to);
 
-    const messagePayload = {
+    const payload = {
       messaging_product: "whatsapp",
       to,
       type: "text",
       text: { body: message },
     };
 
-    // Send message to WhatsApp
-    const response = await whatsAppRepository.sendMessage(messagePayload);
+    const response = await whatsAppRepository.sendMessage(payload);
 
-    const outgoingMessage = {
-      to: encrypt(to),
+    await whatsAppRepository.saveOutgoingMessage({
+      to: encryptedTo,
       type: "text",
       whatsappMessageId: response?.messages?.[0]?.id || null,
       status: "SENT",
-      requestPayload: sanitizeOutgoingPayload(messagePayload),
+      requestPayload: sanitizeOutgoingPayload(payload),
       responsePayload: sanitizeOutgoingPayload(response),
-    };
+    });
 
-    await whatsAppRepository.saveOutgoingMessage(outgoingMessage);
-
-    responseHandler.Ok(response, res);
+    const encryptedResponse = encryptWhatsappResponseForClient(
+      response,
+      encryptedTo,
+    );
+    responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
-    responseHandler.internalServerError(res, err.message);
+    handleError(res, err);
   }
 };
 
+// --- Template message
 const sendTemplateMessage = async (req, res) => {
   try {
     const { to, name, discount } = req.body;
+    const encryptedTo = encrypt(to);
 
     const payload = {
       messaging_product: "whatsapp",
@@ -47,195 +71,143 @@ const sendTemplateMessage = async (req, res) => {
         name: "discount",
         language: { code: "en_US" },
         components: [
-          {
-            type: "header",
-            parameters: [{ type: "text", text: name }],
-          },
-          {
-            type: "body",
-            parameters: [{ type: "text", text: discount }],
-          },
+          { type: "header", parameters: [{ type: "text", text: name }] },
+          { type: "body", parameters: [{ type: "text", text: discount }] },
         ],
       },
     };
 
     const response = await whatsAppRepository.sendMessage(payload);
-    responseHandler.Ok(response, res);
-  } catch (err) {
-    responseHandler.internalServerError(res, err.message);
-  }
-};
-
-/// Send a document to a WhatsApp user
-const sendMediaMessage = async (req, res) => {
-  try {
-    const { to, link } = req.body;
-
-    const payload = {
-      messaging_product: "whatsapp",
-      to,
-      type: "document",
-      document: {
-        link,
-      },
-    };
-
-    const response = await whatsAppRepository.sendMessage(payload);
-
-    const outgoingMessage = {
-      to: encrypt(to),
-      type: "document",
-      whatsappMessageId: response?.messages?.[0]?.id || null,
-      status: "SENT",
-      requestPayload: sanitizeOutgoingPayload(payload),
-      responsePayload: sanitizeOutgoingPayload(response.data),
-    };
-
-    await whatsAppRepository.saveOutgoingMessage(outgoingMessage);
-
-    responseHandler.Ok(response, res);
-  } catch (err) {
-    responseHandler.internalServerError(res, err.message);
-  }
-};
-
-// Send a Image to a WhatsApp user via a link
-
-const sendImageViaLink = async (req, res) => {
-  try {
-    const { to, link } = req.body;
-
-    const payload = {
-      messaging_product: "whatsapp",
-      to,
-      type: "image",
-      image: {
-        link,
-      },
-    };
-
-    const response = await whatsAppRepository.sendMessage(payload);
-
-    const outgoingMessage = {
-      to: encrypt(to),
-      type: "image",
-      whatsappMessageId: response?.messages?.[0]?.id || null,
-      status: "SENT",
-      requestPayload: sanitizeOutgoingPayload(payload),
-      responsePayload: sanitizeOutgoingPayload(response.data),
-    };
-
-    await whatsAppRepository.saveOutgoingMessage(outgoingMessage);
-
-    responseHandler.Ok(response, res);
-  } catch (err) {
-    responseHandler.internalServerError(res, err.message);
-  }
-};
-
-const uploadImageController = async (req, res) => {
-  try {
-    const response = await whatsAppRepository.uploadImage(
-      req.file.path,
-      req.file.mimetype,
-    );
 
     await whatsAppRepository.saveOutgoingMessage({
-      to: req.body.to,
-      type: "image",
-      whatsappMediaId: response.id,
-      status: "UPLOADED",
-      requestPayload: sanitizeOutgoingPayload({
-        fileName: req.file.originalname,
-        mimeType: req.file.mimetype,
-      }),
+      to: encryptedTo,
+      type: "template",
+      whatsappMessageId: response?.messages?.[0]?.id || null,
+      status: "SENT",
+      requestPayload: sanitizeOutgoingPayload(payload),
       responsePayload: sanitizeOutgoingPayload(response),
     });
 
-    responseHandler.Ok(response, res);
+    const encryptedResponse = encryptWhatsappResponseForClient(
+      response,
+      encryptedTo,
+    );
+    responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
-    console.error("Upload Error:", err.response?.data || err.message);
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
-    responseHandler.internalServerError(res, err.response?.data || err.message);
+    handleError(res, err);
   }
 };
 
+// --- Hello World Template
 const sendHelloWorldTemplate = async (req, res) => {
   try {
     const { to } = req.body;
+    const encryptedTo = encrypt(to);
 
-    const messagePayload = {
+    const payload = {
       messaging_product: "whatsapp",
       to,
       type: "template",
-      template: {
-        name: "hello_world",
-        language: { code: "en_US" },
-      },
+      template: { name: "hello_world", language: { code: "en_US" } },
     };
 
-    // Send message to WhatsApp
-    const response = await whatsAppRepository.sendMessage(messagePayload);
+    const response = await whatsAppRepository.sendMessage(payload);
 
-    const outgoingMessage = {
-      to: encrypt(to),
+    await whatsAppRepository.saveOutgoingMessage({
+      to: encryptedTo,
       type: "template",
       whatsappMessageId: response?.messages?.[0]?.id || null,
       status: "SENT",
-      requestPayload: sanitizeOutgoingPayload(messagePayload),
+      requestPayload: sanitizeOutgoingPayload(payload),
       responsePayload: sanitizeOutgoingPayload(response),
-    };
+    });
 
-    await whatsAppRepository.saveOutgoingMessage(outgoingMessage);
-
-    responseHandler.Ok(response, res);
+    const encryptedResponse = encryptWhatsappResponseForClient(
+      response,
+      encryptedTo,
+    );
+    responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
-    responseHandler.internalServerError(res, err.message);
+    handleError(res, err);
   }
 };
 
-// Upload and send image to WhatsApp user
-const uploadAndSendImageController = async (req, res) => {
+// --- Unified Media Controller (Image / Document, Upload or Link)
+const sendMediaController = async (req, res) => {
   try {
-    const { to, caption } = req.body;
+    const { to, link, caption, filename, type } = req.body;
+    const encryptedTo = encrypt(to);
 
-    const uploadResponse = await whatsAppRepository.uploadImage(
-      req.file.path,
-      req.file.mimetype,
-    );
+    let mediaResponse;
+    if (req.file) {
+      mediaResponse =
+        type === "image"
+          ? await whatsAppRepository.uploadImage(
+              req.file.path,
+              req.file.mimetype,
+            )
+          : await whatsAppRepository.uploadDocument(
+              req.file.path,
+              req.file.mimetype,
+            );
+    }
 
-    const sendResponse = await whatsAppRepository.sendImageMessage({
-      to,
-      mediaId: uploadResponse.id,
-      caption,
-    });
+    // Prepare WhatsApp payload
+    let payload;
+    if (type === "image") {
+      payload = {
+        messaging_product: "whatsapp",
+        to,
+        type: "image",
+        image: link
+          ? { link }
+          : { id: mediaResponse.id, ...(caption && { caption }) },
+      };
+    } else if (type === "document") {
+      payload = {
+        messaging_product: "whatsapp",
+        to,
+        type: "document",
+        document: link
+          ? { link }
+          : {
+              id: mediaResponse.id,
+              ...(caption && { caption }),
+              ...(filename && { filename }),
+            },
+      };
+    } else {
+      throw new Error("Unsupported media type. Must be 'image' or 'document'.");
+    }
 
+    // Send message
+    const sendResponse = await whatsAppRepository.sendMessage(payload);
+
+    // Save outgoing message
     await whatsAppRepository.saveOutgoingMessage({
-      to,
-      type: "image",
-      whatsappMediaId: uploadResponse.id,
-      whatsappMessageId: sendResponse.messages?.[0]?.id,
+      to: encryptedTo,
+      type,
+      whatsappMediaId: mediaResponse?.id || null,
+      whatsappMessageId: sendResponse?.messages?.[0]?.id || null,
       status: "SENT",
-      requestPayload: { caption },
-      responsePayload: sendResponse,
+      requestPayload: sanitizeOutgoingPayload(payload),
+      responsePayload: sanitizeOutgoingPayload(sendResponse),
     });
 
-    responseHandler.Ok(sendResponse, res);
+    // Encrypt response for client
+    const encryptedResponse = encryptWhatsappResponseForClient(
+      sendResponse,
+      encryptedTo,
+    );
+    responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    responseHandler.internalServerError(res, err.response?.data || err.message);
+    handleError(res, err);
   }
 };
 
 module.exports = {
   sendTextMessage,
   sendTemplateMessage,
-  sendMediaMessage,
-  uploadImageController,
   sendHelloWorldTemplate,
-  sendImageViaLink,
-  uploadAndSendImageController,
+  sendMediaController,
 };

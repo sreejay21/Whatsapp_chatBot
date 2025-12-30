@@ -1,29 +1,25 @@
 const express = require("express");
-const whatAppController = require("../controllers/whatsappOutgoing.controller");
+const whatsAppController = require("../controllers/whatsappOutgoing.controller");
 const upload = require("../middleware/multer");
 
 const router = express.Router();
 
-router.post("/send-text", whatAppController.sendTextMessage);
-router.post("/send-template", whatAppController.sendTemplateMessage);
-router.post("/send-media", whatAppController.sendMediaMessage);
-router.post("/send-image", whatAppController.sendImageViaLink);
-
-router.post(
-  "/upload-image",
-  upload.single("file"),
-  whatAppController.uploadImageController,
-);
-
+// Text & Template messages
+router.post("/send-text", whatsAppController.sendTextMessage);
+router.post("/send-template", whatsAppController.sendTemplateMessage);
 router.post(
   "/send-hello-world-template",
-  whatAppController.sendHelloWorldTemplate,
+  whatsAppController.sendHelloWorldTemplate,
 );
 
+// Media messages via link (image or document)
+router.post("/send-media", whatsAppController.sendMediaController);
+
+// Media messages via file upload
 router.post(
-  "/send-uploaded-image",
+  "/send-media-upload",
   upload.single("file"),
-  whatAppController.uploadAndSendImageController,
+  whatsAppController.sendMediaController,
 );
 
 module.exports = router;
