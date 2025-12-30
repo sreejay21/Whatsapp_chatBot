@@ -9,6 +9,7 @@ This project provides a robust backend for a WhatsApp Chatbot using the WhatsApp
   - [Webhook](#webhook)
   - [Outgoing Messages](#outgoing-messages)
   - [User Management](#user-management)
+  - [Chat History](#chat-history)
 - [Response Format](#response-format)
 - [Postman Collection](#postman-collection)
 
@@ -127,6 +128,46 @@ Ensure you have your environment variables configured in a `.env` file:
     ],
     "pagination": {
       "totalUsers": 1,
+      "totalPages": 1,
+      "currentPage": 1
+    }
+  }
+}
+```
+
+---
+
+### Chat History
+
+#### Get User Chat History
+`GET /api/whatsapp-chat/:userId`
+
+- **Path Parameters:**
+  - `userId`: Encrypted phone number of the user (from `listUser` response)
+- **Query Parameters:**
+  - `page`: Page number (default: 1)
+  - `limit`: Chats per page (default: 20)
+
+**Response Example:**
+```json
+{
+  "status": true,
+  "responsecode": 200,
+  "result": {
+    "chats": [
+      {
+        "type": "incoming",
+        "message": "Hello!",
+        "timestamp": "2023-12-30T10:00:00.000Z"
+      },
+      {
+        "type": "outgoing",
+        "message": "Hi, how can I help you?",
+        "timestamp": "2023-12-30T10:00:05.000Z"
+      }
+    ],
+    "pagination": {
+      "totalChats": 2,
       "totalPages": 1,
       "currentPage": 1
     }
