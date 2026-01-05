@@ -1,0 +1,59 @@
+const whatsappGroup = require("../models/whatsappGroup.model");
+const WhatsappUser = require("../models/whatsappUser.model");
+const { decrypt } = require("../config/crypto.util");
+
+const createGroup = async ({
+  name,
+  encryptedMemberIds,
+  encryptedCreatorId,
+}) => {
+  // Decrypt IDs
+  const memberIds = Array.isArray(encryptedMemberIds) ? encryptedMemberIds.map((id) => decrypt(id)) : [];
+  const creatorId = decrypt(encryptedCreatorId);
+
+  // Remove duplicates
+  const uniqueIds = [...new Set([...memberIds, creatorId])];
+
+  // Validate users exist
+  const users = await WhatsappUser.find({ _id: { $in: uniqueIds } });
+  if (users.length !== uniqueIds.length) {
+    throw new Error("One or more users do not exist");
+  }
+
+  // Build members list
+  const members = uniqueIds.map((id) => ({
+    userId: id,
+    role: id === creatorId ? "ADMIN" : "MEMBER",
+  }));
+
+  return whatsappGroup.create({
+    name,
+    members,
+    createdBy: creatorId,
+  });
+};
+
+const listAllGroups = async ({ page, limit }) => {
+  const skip = (page - 1) * limit;
+
+  const groups = await whatsappGroup
+    .find()
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 })
+    .select("name members createdBy createdAt");
+
+  const total = await whatsappGroup.countDocuments();
+
+  return {
+    groups,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  };
+};
+
+module.exports = { createGroup, listAllGroups };
