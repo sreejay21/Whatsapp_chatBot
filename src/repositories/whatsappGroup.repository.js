@@ -6,9 +6,10 @@ const createGroup = async ({
   name,
   encryptedMemberIds,
   encryptedCreatorId,
+  logo,
 }) => {
   // Decrypt IDs
-  const memberIds = Array.isArray(encryptedMemberIds) ? encryptedMemberIds.map((id) => decrypt(id)) : [];
+  const memberIds = encryptedMemberIds.map((id) => decrypt(id));
   const creatorId = decrypt(encryptedCreatorId);
 
   // Remove duplicates
@@ -30,6 +31,7 @@ const createGroup = async ({
     name,
     members,
     createdBy: creatorId,
+    logo,
   });
 };
 

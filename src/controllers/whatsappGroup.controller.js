@@ -4,9 +4,10 @@ const { encrypt } = require("../config/crypto.util");
 
 const createGroup = async (req, res) => {
   try {
-    const { name, members, createdBy } = req.body;
+    const { name, createdBy } = req.body;
     const logoFile = req.file;
     let logoUrl = null;
+    const members = normalizeArray(req.body.members);
 
     if (logoFile) {
       logoUrl = `/uploads/groups/${logoFile.filename}`;
@@ -64,6 +65,19 @@ const listAllGroups = async (req, res) => {
     console.error("List all groups error:", err);
     return responseHandler.internalServerError(res, "Failed to fetch groups");
   }
+};
+
+const normalizeArray = (value) => {
+  if (Array.isArray(value)) return value;
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+  }
+
+  throw new Error("Members must be an array");
 };
 
 module.exports = { createGroup, listAllGroups };
