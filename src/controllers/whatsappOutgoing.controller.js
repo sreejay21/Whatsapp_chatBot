@@ -1,5 +1,5 @@
 const whatsAppRepository = require("../repositories/whatsappOutgoing.repository");
-const { encrypt } = require("../config/crypto.util");
+const { encrypt, decrypt } = require("../config/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 const responseHandler = require("../utils/response.handler");
 const fs = require("fs");
@@ -26,18 +26,30 @@ const handleError = (res, err) => {
 // --- Text message
 const sendTextMessage = async (req, res) => {
   try {
-    const { to, message } = req.body;
-    const encryptedTo = encrypt(to);
+    const { to: encryptedTo, message } = req.body;
+
+    if (!encryptedTo || !message) {
+      return responseHandler.badRequest(
+        "Recipient and message are required",
+        res,
+      );
+    }
+
+    // Decrypt phone number
+    const decryptedTo = decrypt(encryptedTo);
 
     const payload = {
       messaging_product: "whatsapp",
-      to,
+      to: decryptedTo,
       type: "text",
-      text: { body: message },
+      text: {
+        body: message,
+      },
     };
 
     const response = await whatsAppRepository.sendMessage(payload);
 
+    // Save ONLY encrypted value
     await whatsAppRepository.saveOutgoingMessage({
       to: encryptedTo,
       type: "text",
@@ -47,16 +59,17 @@ const sendTextMessage = async (req, res) => {
       responsePayload: sanitizeOutgoingPayload(response),
     });
 
+    // Encrypt response back to client
     const encryptedResponse = encryptWhatsappResponseForClient(
       response,
       encryptedTo,
     );
+
     responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
     handleError(res, err);
   }
 };
-
 // --- Template message
 const sendTemplateMessage = async (req, res) => {
   try {
@@ -101,14 +114,22 @@ const sendTemplateMessage = async (req, res) => {
 // --- Hello World Template
 const sendHelloWorldTemplate = async (req, res) => {
   try {
-    const { to } = req.body;
-    const encryptedTo = encrypt(to);
+    const { to: encryptedTo } = req.body;
+
+    if (!encryptedTo) {
+      return responseHandler.badRequest("Recipient is required", res);
+    }
+
+    const decryptedTo = decrypt(encryptedTo);
 
     const payload = {
       messaging_product: "whatsapp",
-      to,
+      to: decryptedTo,
       type: "template",
-      template: { name: "hello_world", language: { code: "en_US" } },
+      template: {
+        name: "hello_world",
+        language: { code: "en_US" },
+      },
     };
 
     const response = await whatsAppRepository.sendMessage(payload);
@@ -126,6 +147,7 @@ const sendHelloWorldTemplate = async (req, res) => {
       response,
       encryptedTo,
     );
+
     responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
     handleError(res, err);

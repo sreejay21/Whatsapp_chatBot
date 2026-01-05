@@ -14,20 +14,16 @@ const createGroup = async ({
 
   // Remove duplicates
   const uniqueIds = [...new Set([...memberIds, creatorId])];
-  console.log(uniqueIds);
   // Validate users exist
   const users = await WhatsappUser.find({ _id: { $in: uniqueIds } });
-  
   if (users.length !== uniqueIds.length) {
-    console.log("Unique IDs requested:", uniqueIds);
-    console.log("Users found in DB:", users.map(u => u._id.toString()));
-    throw new Error(`One or more users do not exist. Found ${users.length} out of ${uniqueIds.length} requested.`);
+    throw new Error("One or more users do not exist");
   }
 
-  // Build members list
-  const members = uniqueIds.map((id) => ({
-    userId: id,
-    role: id === creatorId ? "ADMIN" : "MEMBER",
+  const members = users.map((user) => ({
+    userId: user._id,
+    name: user.name,
+    role: user._id.toString() === creatorId.toString() ? "ADMIN" : "MEMBER",
   }));
 
   return whatsappGroup.create({

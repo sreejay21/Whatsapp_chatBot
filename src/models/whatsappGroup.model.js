@@ -11,6 +11,7 @@ const whatsappGroupSchema = new mongoose.Schema(
           ref: "WhatsappUser",
           required: true,
         },
+        name: { type: String, required: true },
         role: {
           type: String,
           enum: ["ADMIN", "MEMBER"],
