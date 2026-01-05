@@ -5,9 +5,11 @@ const {
 const validateRequest = require("../middleware/validateRequest");
 const whatsAppGroupController = require("../controllers/whatsappGroup.controller");
 const upload = require("../middleware/multer");
+const authenticate = require("../middleware/auth");
 
 router.post(
   "/create-groupChat",
+  authenticate,
   upload.single("logo"),
   createGroupValidator,
   validateRequest,

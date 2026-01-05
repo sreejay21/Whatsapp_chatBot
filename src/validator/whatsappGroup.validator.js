@@ -25,10 +25,6 @@ const createGroupValidator = [
 
       return true;
     }),
-
-  body("createdBy")
-    .notEmpty()
-    .withMessage("createdBy (encrypted user id) is required"),
 ];
 
 module.exports = { createGroupValidator };

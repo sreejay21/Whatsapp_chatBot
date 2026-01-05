@@ -11,7 +11,7 @@ const getUserChatHistory = async ({ encryptedPhone, page = 1, limit = 20 }) => {
     .lean();
 
   const outgoingQuery = WhatsappOutgoingMessage.find({
-    to: encryptedPhone, // ✅ FIXED
+    to: encryptedPhone,
   })
     .select("type requestPayload createdAt whatsappMessageId status")
     .lean();
