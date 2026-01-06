@@ -6,6 +6,7 @@ const validateRequest = require("../middleware/validateRequest");
 const whatsAppGroupController = require("../controllers/whatsappGroup.controller");
 const upload = require("../middleware/multer");
 const authenticate = require("../middleware/auth");
+const whatsappGroupMessageController = require("../controllers/whatsappGroupMessage.controller");
 
 router.post(
   "/create-groupChat",
@@ -17,5 +18,15 @@ router.post(
 );
 
 router.get("/list-groups", whatsAppGroupController.listAllGroups);
+
+router.post(
+  "/send-group-message",
+  whatsappGroupMessageController.sendMessageToGroup,
+);
+
+router.get(
+  "/list-group-messages",
+  whatsappGroupMessageController.getGroupMessages,
+);
 
 module.exports = router;
