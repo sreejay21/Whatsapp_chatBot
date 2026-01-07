@@ -158,7 +158,9 @@ const sendHelloWorldTemplate = async (req, res) => {
 const sendMediaController = async (req, res) => {
   try {
     const { to, link, caption, filename, type } = req.body;
-    const encryptedTo = encrypt(to);
+
+    const encryptedTo = to;
+    const decryptedTo = decrypt(to);
 
     let mediaResponse;
     if (req.file) {
@@ -174,12 +176,17 @@ const sendMediaController = async (req, res) => {
             );
     }
 
+    const mediaUrl = req.file
+      ? `${process.env.BASE_URL}/uploads/${req.file.filename}`
+      : link || null;
+    console.log("mediaUrl", mediaUrl);
+
     // Prepare WhatsApp payload
     let payload;
     if (type === "image") {
       payload = {
         messaging_product: "whatsapp",
-        to,
+        to: decryptedTo,
         type: "image",
         image: link
           ? { link }
@@ -188,7 +195,7 @@ const sendMediaController = async (req, res) => {
     } else if (type === "document") {
       payload = {
         messaging_product: "whatsapp",
-        to,
+        to: decryptedTo,
         type: "document",
         document: link
           ? { link }
@@ -205,10 +212,11 @@ const sendMediaController = async (req, res) => {
     // Send message
     const sendResponse = await whatsAppRepository.sendMessage(payload);
 
-    // Save outgoing message
+    // Save outgoing message (store encrypted number)
     await whatsAppRepository.saveOutgoingMessage({
       to: encryptedTo,
       type,
+      mediaUrl,
       whatsappMediaId: mediaResponse?.id || null,
       whatsappMessageId: sendResponse?.messages?.[0]?.id || null,
       status: "SENT",
@@ -221,6 +229,7 @@ const sendMediaController = async (req, res) => {
       sendResponse,
       encryptedTo,
     );
+
     responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
     handleError(res, err);

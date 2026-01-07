@@ -21,12 +21,22 @@ const saveIncomingMessage = async (messagePayload) => {
     messageId: messagePayload.messageId,
   });
   if (exists) return exists;
-  messagePayload.status = "delivered";
-  messagePayload.statusHistory = [
-    { status: "delivered", timestamp: new Date() },
-  ];
+  return await WhatsappIncomingMessage.create({
+    from: messagePayload.from,
+    type: messagePayload.type,
+    messageId: messagePayload.messageId,
 
-  return await WhatsappIncomingMessage.create(messagePayload);
+    textBody: messagePayload.textBody,
+    interactiveData: messagePayload.interactiveData,
+
+    mediaUrl: messagePayload.mediaUrl,
+    mediaMeta: messagePayload.mediaMeta,
+
+    rawPayload: messagePayload.rawPayload,
+
+    status: "delivered",
+    statusHistory: [{ status: "delivered", timestamp: new Date() }],
+  });
 };
 // ===== Update Message Status =====
 const updateMessageStatus = async (messageId, status, statusData) => {

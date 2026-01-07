@@ -1,4 +1,5 @@
 const multer = require("multer");
+const path = require("path");
 
 const allowedMimeTypes = [
   // Images
@@ -17,10 +18,19 @@ const allowedMimeTypes = [
   "text/plain",
 ];
 
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname); // keeps extension
+    const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, safeName);
+  },
+});
+
 const upload = multer({
-  dest: "uploads/",
+  storage,
   limits: {
-    fileSize: 16 * 1024 * 1024, // 16MB (WhatsApp max)
+    fileSize: 16 * 1024 * 1024, // 16MB
   },
   fileFilter: (req, file, cb) => {
     if (!allowedMimeTypes.includes(file.mimetype)) {

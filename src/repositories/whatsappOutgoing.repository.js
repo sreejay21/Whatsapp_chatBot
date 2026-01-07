@@ -26,6 +26,7 @@ const sendMessage = async (payload) => {
 const saveOutgoingMessage = async (payload) => {
   return await WhatsappOutgoingMessage.create({
     to: payload.to, // encrypted already
+    mediaUrl: payload.mediaUrl,
     type: payload.type,
     requestPayload: payload.requestPayload,
     responsePayload: payload.responsePayload,

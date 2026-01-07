@@ -25,7 +25,11 @@ const outgoingWhatsappMessageSchema = new mongoose.Schema(
       type: String,
       default: "SENT",
     },
+    mediaUrl: {
+      type: String,
+    },
   },
+
   { timestamps: true },
 );
 

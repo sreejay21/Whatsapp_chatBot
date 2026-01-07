@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const incomingWhatsappMessageSchema = new mongoose.Schema(
   {
     from: { type: String, required: true },
+
     type: {
       type: String,
       enum: [
@@ -16,15 +17,28 @@ const incomingWhatsappMessageSchema = new mongoose.Schema(
       ],
       required: true,
     },
+
     messageId: { type: String, required: true, unique: true },
+
     status: {
       type: String,
       enum: ["sent", "delivered", "read", "failed", "unknown"],
       default: "delivered",
     },
+
     textBody: { type: String },
+    mediaUrl: { type: String },
+
+    mediaMeta: {
+      mediaId: { type: String },
+      mimeType: { type: String },
+      sha256: { type: String },
+    },
+
     interactiveData: { type: Object },
+
     statusData: { type: Object },
+
     statusHistory: [
       {
         status: {
@@ -34,14 +48,13 @@ const incomingWhatsappMessageSchema = new mongoose.Schema(
         timestamp: { type: Date, default: Date.now },
       },
     ],
+
     rawPayload: { type: Object, required: true },
   },
   { timestamps: true },
 );
 
-const incomingWhatsappMessage = mongoose.model(
+module.exports = mongoose.model(
   "incomingWhatsappMessage",
   incomingWhatsappMessageSchema,
 );
-
-module.exports = incomingWhatsappMessage;

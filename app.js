@@ -1,12 +1,17 @@
 const express = require("express");
+const path = require("path");
+
 const whatsappRoutes = require("./src/routes/whatsapp.routes");
 const whatsappWebhookRoutes = require("./src/routes/whatsappWebhook.route");
 const whatsappUserRoutes = require("./src/routes/whatsappUser.routes");
 const whatsappChatRoutes = require("./src/routes/whatsAppChat.routes");
-const whatsappGroupRoutes = require("./src/routes/whatsappGroup.routes")
+const whatsappGroupRoutes = require("./src/routes/whatsappGroup.routes");
+
 const app = express();
 
 app.use(express.json());
+
+app.use("/uploads", express.static(path.resolve("uploads")));
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Welcome" });

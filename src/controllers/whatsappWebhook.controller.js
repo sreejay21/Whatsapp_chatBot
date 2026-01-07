@@ -3,6 +3,7 @@ const { encrypt, decrypt } = require("../config/crypto.util");
 const { sanitizeWhatsAppPayload } = require("../config/whatsappPayload.util");
 const { saveWhatsappUser } = require("../controllers/whatsappUser.controller");
 const responseHandler = require("../utils/response.handler");
+const whatsappMediaRepo = require("../repositories/whatsappMedia.respository");
 
 // Webhook verification
 const verifyWebhook = (req, res) => {
@@ -32,13 +33,31 @@ const handleWebhook = async (req, res) => {
     // ===== Handle Incoming Messages (SAVE ONCE) =====
     if (messages) {
       const encryptedFrom = encrypt(messages.from);
+      let mediaUrl;
+
+      // ===== IMAGE HANDLING =====
+      if (messages.type === "image") {
+        const mediaId = messages.image.id;
+        const mimeType = messages.image.mime_type;
+        mediaUrl = await whatsappMediaRepo.downloadWhatsAppMedia(
+          mediaId,
+          mimeType,
+        );
+      }
+
       await whatsAppRepo.saveIncomingMessage({
         from: encryptedFrom,
-        type: messages.type,
+        type: "image",
         messageId: messages.id,
-        textBody: messages.type === "text" ? messages.text.body : undefined,
-        interactiveData:
-          messages.type === "interactive" ? messages.interactive : undefined,
+
+        mediaUrl,
+
+        mediaMeta: {
+          mediaId: messages.image.id,
+          mimeType: messages.image.mime_type,
+          sha256: messages.image.sha256,
+        },
+
         rawPayload: sanitizeWhatsAppPayload(value),
       });
 
