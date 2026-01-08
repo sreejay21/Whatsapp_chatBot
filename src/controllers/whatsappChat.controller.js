@@ -6,8 +6,6 @@ const getWhatsappChatHistory = async (req, res) => {
   try {
     const { userId } = req.params;
     const { page, limit } = req.query;
-
-    // userId = encryptedPhone
     const plainPhone = decrypt(userId);
     const encryptedPhone = encrypt(plainPhone);
 

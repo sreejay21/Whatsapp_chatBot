@@ -59,7 +59,7 @@ const listGroupMessages = async (encryptedGroupId, page = 1, limit = 20) => {
   const skip = (page - 1) * limit;
 
   const messages = await GroupMessage.find({ groupId })
-    .sort({ createdAt: 1 })
+    .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
     .select("_id groupId senderId senderName groupName message");

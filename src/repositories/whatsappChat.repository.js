@@ -45,7 +45,7 @@ const getUserChatHistory = async ({ encryptedPhone, page = 1, limit = 20 }) => {
   }));
 
   const combined = [...normalizedIncoming, ...normalizedOutgoing].sort(
-    (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
   );
 
   return {
