@@ -21,6 +21,7 @@ router.get("/list-groups", whatsAppGroupController.listAllGroups);
 
 router.post(
   "/send-group-message",
+  upload.single("file"),
   whatsappGroupMessageController.sendMessageToGroup,
 );
 

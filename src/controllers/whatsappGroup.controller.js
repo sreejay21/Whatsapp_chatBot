@@ -4,14 +4,14 @@ const { encrypt } = require("../config/crypto.util");
 
 const createGroup = async (req, res) => {
   try {
-    const { name, members  } = req.body;
+    const { name, members } = req.body;
     const logoFile = req.file;
     let logoUrl = null;
     const encryptedMemberIds = normalizeArray(members);
-    const encryptedCreatorId = encrypt(req.user.nameid); 
+    const encryptedCreatorId = encrypt(req.user.nameid);
 
     if (logoFile) {
-      logoUrl = `/uploads/groups/${logoFile.filename}`;
+      logoUrl = `${process.env.BASE_URL}/uploads/${req.file.filename}`;
     }
 
     const group = await groupRepo.createGroup({
@@ -51,6 +51,7 @@ const listAllGroups = async (req, res) => {
     const groups = result.groups.map((group) => ({
       groupId: encrypt(group._id.toString()),
       name: group.name,
+      logo: group.logo,
       membersCount: group.members.length,
       createdAt: group.createdAt,
     }));

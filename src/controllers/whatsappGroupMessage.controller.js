@@ -1,28 +1,57 @@
 const {
   sendGroupMessage,
   listGroupMessages,
+  saveGroupMedia,
 } = require("../repositories/whatsappGroupMessage.repository");
 const { encrypt } = require("../config/crypto.util");
 const responseHandler = require("../utils/response.handler");
 
-// Send Message to Group
 const sendMessageToGroup = async (req, res) => {
   try {
-    const { groupId, senderId, message } = req.body;
+    const { groupId, senderId, message } = req.body || {};
+    const file = req.file;
 
-    const result = await sendGroupMessage({
+    if (!groupId || !senderId) {
+      return responseHandler.badRequest(
+        "groupId and senderId are required",
+        res,
+      );
+    }
+
+    if (!message && !file) {
+      return responseHandler.badRequest("Message or file is required", res);
+    }
+
+    let mediaUrl;
+    let messageType = "text";
+
+    if (file) {
+      mediaUrl = `${process.env.BASE_URL}/uploads/${file.filename}`;
+      messageType = file.mimetype.startsWith("image") ? "image" : "document";
+    }
+
+    const payload = {
       encryptedGroupId: groupId,
       encryptedSenderId: senderId,
-      message,
-    });
+      messageType,
+    };
+
+    if (message) payload.message = message;
+    if (mediaUrl) payload.mediaUrl = mediaUrl;
+
+    const result = await sendGroupMessage(payload);
+    const savedMessage = result.data;
 
     const responseData = {
-      id: encrypt(result.data.id.toString()),
-      groupId: encrypt(result.data.groupId.toString()),
-      senderId: encrypt(result.data.senderId.toString()),
-      message: result.data.message,
-      senderName: result.data.senderName,
-      groupName: result.data.groupName,
+      id: encrypt(savedMessage._id.toString()),
+      groupId: encrypt(savedMessage.groupId.toString()),
+      senderId: encrypt(savedMessage.senderId.toString()),
+      message: savedMessage.message,
+      senderName: savedMessage.senderName,
+      groupName: savedMessage.groupName,
+      mediaUrl: savedMessage.mediaUrl,
+      messageType: savedMessage.messageType,
+      createdAt: savedMessage.createdAt,
     };
 
     return responseHandler.Ok(responseData, res);

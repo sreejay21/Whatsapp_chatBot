@@ -22,11 +22,14 @@ const groupMessageSchema = new mongoose.Schema(
     },
     message: {
       type: String,
-      required: true,
     },
     messageType: {
       type: String,
-      default: "text",
+      enum: ["text", "image", "document"],
+      required: true,
+    },
+    mediaUrl: {
+      type: String,
     },
   },
   { timestamps: true },

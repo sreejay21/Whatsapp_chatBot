@@ -42,7 +42,7 @@ const listAllGroups = async ({ page, limit }) => {
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })
-    .select("name members createdBy createdAt");
+    .select("name members createdBy createdAt logo");
 
   const total = await whatsappGroup.countDocuments();
 
