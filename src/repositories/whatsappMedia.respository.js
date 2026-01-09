@@ -1,12 +1,12 @@
-import axios from "axios";
-import fs from "fs";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 const ACCESS_TOKEN = process.env.WHATSAPP_TOKEN;
 const GRAPH_URL = "https://graph.facebook.com/v19.0";
 
-export const downloadWhatsAppMedia = async (mediaId, mimeType) => {
+const downloadWhatsAppMedia = async (mediaId, mimeType) => {
+  const { v4: uuidv4 } = await import("uuid");
   // 1. Get media URL
   const metaRes = await axios.get(`${GRAPH_URL}/${mediaId}`, {
     headers: {
@@ -43,3 +43,5 @@ export const downloadWhatsAppMedia = async (mediaId, mimeType) => {
   // 4. Return public URL
   return `${process.env.BASE_URL}/uploads/whatsapp/${fileName}`;
 };
+
+module.exports = { downloadWhatsAppMedia };
