@@ -33,6 +33,7 @@ const saveIncomingMessage = async (messagePayload) => {
     mediaMeta: messagePayload.mediaMeta,
 
     rawPayload: messagePayload.rawPayload,
+    fileName: messagePayload.fileName,
 
     status: "delivered",
     statusHistory: [{ status: "delivered", timestamp: new Date() }],

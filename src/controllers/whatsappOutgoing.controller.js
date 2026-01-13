@@ -158,7 +158,7 @@ const sendHelloWorldTemplate = async (req, res) => {
 const sendMediaController = async (req, res) => {
   try {
     const { to, link, caption, filename, type } = req.body;
-
+    console.log("req.body", req.body);
     const encryptedTo = to;
     const decryptedTo = decrypt(to);
 
@@ -211,7 +211,7 @@ const sendMediaController = async (req, res) => {
 
     // Send message
     const sendResponse = await whatsAppRepository.sendMessage(payload);
-
+    console.log(req.file.originalname);
     // Save outgoing message (store encrypted number)
     await whatsAppRepository.saveOutgoingMessage({
       to: encryptedTo,
@@ -222,6 +222,7 @@ const sendMediaController = async (req, res) => {
       status: "SENT",
       requestPayload: sanitizeOutgoingPayload(payload),
       responsePayload: sanitizeOutgoingPayload(sendResponse),
+      fileName: filename || req.file?.originalname,
     });
 
     // Encrypt response for client

@@ -33,30 +33,33 @@ const handleWebhook = async (req, res) => {
     // ===== Handle Incoming Messages (SAVE ONCE) =====
     if (messages) {
       const encryptedFrom = encrypt(messages.from);
-      let mediaUrl;
+      let mediaData = null;
 
-      // ===== IMAGE HANDLING =====
-      if (messages.type === "image") {
-        const mediaId = messages.image.id;
-        const mimeType = messages.image.mime_type;
-        mediaUrl = await whatsappMediaRepo.downloadWhatsAppMedia(
-          mediaId,
-          mimeType,
+      if (messages.type === "image" || messages.type === "document") {
+        const media = messages[messages.type];
+
+        mediaData = await whatsappMediaRepo.downloadWhatsAppMedia(
+          media.id,
+          media.mime_type,
         );
       }
+      console.log("mediaDataFileName", mediaData.fileName);
 
       await whatsAppRepo.saveIncomingMessage({
         from: encryptedFrom,
-        type: "image",
+        type: messages.type,
         messageId: messages.id,
 
-        mediaUrl,
+        mediaUrl: mediaData?.url || null,
 
-        mediaMeta: {
-          mediaId: messages.image.id,
-          mimeType: messages.image.mime_type,
-          sha256: messages.image.sha256,
-        },
+        fileName: mediaData?.fileName || null,
+        mediaMeta: mediaData
+          ? {
+              mediaId: messages[messages.type].id,
+              mimeType: messages[messages.type].mime_type,
+              sha256: messages[messages.type].sha256,
+            }
+          : null,
 
         rawPayload: sanitizeWhatsAppPayload(value),
       });
