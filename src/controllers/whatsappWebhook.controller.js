@@ -44,8 +44,6 @@ const handleWebhook = async (req, res) => {
           media.mime_type,
         );
       }
-      console.log("mediaDataFileName", mediaData.fileName);
-
       await whatsAppRepo.saveIncomingMessage({
         from: encryptedFrom,
         type: messages.type,
