@@ -11,10 +11,11 @@ const verifyWebhook = (req, res) => {
   const challenge = req.query["hub.challenge"];
   const token = req.query["hub.verify_token"];
 
-  if (mode && token === process.env.WEBHOOK_VERIFY_TOKEN) {
-    return responseHandler.Ok(challenge, res);
+  if (mode === "subscribe" && token === process.env.WEBHOOK_VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
   }
-  return responseHandler.forbidden(res);
+
+  return res.sendStatus(403);
 };
 
 // Webhook handler

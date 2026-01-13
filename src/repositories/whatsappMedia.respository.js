@@ -1,12 +1,13 @@
-import axios from "axios";
-import fs from "fs";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 const ACCESS_TOKEN = process.env.WHATSAPP_TOKEN;
 const GRAPH_URL = "https://graph.facebook.com/v19.0";
 
-export const downloadWhatsAppMedia = async (mediaId, mimeType) => {
+const downloadWhatsAppMedia = async (mediaId, mimeType) => {
+  const { v4: uuidv4 } = await import("uuid");
+
   const metaRes = await axios.get(`${GRAPH_URL}/${mediaId}`, {
     headers: {
       Authorization: `Bearer ${ACCESS_TOKEN}`,
@@ -14,12 +15,15 @@ export const downloadWhatsAppMedia = async (mediaId, mimeType) => {
   });
 
   const mediaUrl = metaRes.data.url;
+  if (!mediaUrl) throw new Error("Media URL not found");
 
   const ext = mimeType?.split("/")[1] || "jpg";
   const fileName = `${uuidv4()}.${ext}`;
 
-  const uploadDir = path.join(process.cwd(), "uploads/whatsapp");
-  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  const uploadDir = path.join(process.cwd(), "uploads", "whatsapp");
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
 
   const filePath = path.join(uploadDir, fileName);
 
@@ -42,3 +46,5 @@ export const downloadWhatsAppMedia = async (mediaId, mimeType) => {
     url: `${process.env.BASE_URL}/uploads/whatsapp/${fileName}`,
   };
 };
+
+module.exports = { downloadWhatsAppMedia };
