@@ -34,6 +34,9 @@ const downloadWhatsAppMedia = async (mediaId, mimeType) => {
     responseType: "stream",
   });
 
+  const size =
+    Number(fileRes.headers["content-length"]) || null;
+
   await new Promise((resolve, reject) => {
     const stream = fs.createWriteStream(filePath);
     fileRes.data.pipe(stream);
@@ -44,7 +47,10 @@ const downloadWhatsAppMedia = async (mediaId, mimeType) => {
   return {
     fileName,
     url: `${process.env.BASE_URL}/uploads/whatsapp/${fileName}`,
+    size, 
+    mimeType,
   };
 };
+
 
 module.exports = { downloadWhatsAppMedia };
