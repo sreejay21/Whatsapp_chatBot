@@ -52,6 +52,7 @@ const handleWebhook = async (req, res) => {
         mediaUrl: mediaData?.url || null,
 
         fileName: mediaData?.fileName || null,
+        size: mediaData?.size || null,
         mediaMeta: mediaData
           ? {
               mediaId: messages[messages.type].id,

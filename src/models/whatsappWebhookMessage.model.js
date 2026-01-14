@@ -29,7 +29,7 @@ const incomingWhatsappMessageSchema = new mongoose.Schema(
     textBody: { type: String },
     mediaUrl: { type: String },
     fileName: { type: String },
-
+    size: { type: Number },
     mediaMeta: {
       mediaId: { type: String },
       mimeType: { type: String },

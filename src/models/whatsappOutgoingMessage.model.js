@@ -31,6 +31,9 @@ const outgoingWhatsappMessageSchema = new mongoose.Schema(
     fileName: {
       type: String,
     },
+    size: {
+      type: Number,
+    },
   },
 
   { timestamps: true },

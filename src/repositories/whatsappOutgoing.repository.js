@@ -33,6 +33,7 @@ const saveOutgoingMessage = async (payload) => {
     whatsappMessageId: payload.whatsappMessageId,
     status: payload.status,
     fileName: payload.fileName,
+    size: payload.size,
   });
 };
 
