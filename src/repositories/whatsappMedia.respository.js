@@ -17,13 +17,11 @@ const downloadWhatsAppMedia = async (mediaId, mimeType) => {
   const mediaUrl = metaRes.data.url;
   if (!mediaUrl) throw new Error("Media URL not found");
 
-  const ext = mimeType?.split("/")[1] || "jpg";
+  const ext = mimeType?.split("/")[1] || "bin";
   const fileName = `${uuidv4()}.${ext}`;
 
   const uploadDir = path.join(process.cwd(), "uploads", "whatsapp");
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+  fs.mkdirSync(uploadDir, { recursive: true });
 
   const filePath = path.join(uploadDir, fileName);
 
@@ -34,23 +32,30 @@ const downloadWhatsAppMedia = async (mediaId, mimeType) => {
     responseType: "stream",
   });
 
-  const size =
-    Number(fileRes.headers["content-length"]) || null;
+  let size = 0;
 
   await new Promise((resolve, reject) => {
-    const stream = fs.createWriteStream(filePath);
-    fileRes.data.pipe(stream);
-    stream.on("finish", resolve);
-    stream.on("error", reject);
+    const writeStream = fs.createWriteStream(filePath);
+
+    fileRes.data.on("data", (chunk) => {
+      size += chunk.length; 
+    });
+
+    fileRes.data.on("error", reject);
+    writeStream.on("error", reject);
+    writeStream.on("finish", resolve);
+
+    fileRes.data.pipe(writeStream);
   });
 
   return {
     fileName,
     url: `${process.env.BASE_URL}/uploads/whatsapp/${fileName}`,
-    size, 
+    size,       
     mimeType,
   };
 };
+
 
 
 module.exports = { downloadWhatsAppMedia };
