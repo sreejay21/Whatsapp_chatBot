@@ -21,9 +21,6 @@ const verifyWebhook = (req, res) => {
 // Webhook handler
 const handleWebhook = async (req, res) => {
   try {
-    // Log the full incoming payload
-    console.log("=== Incoming Webhook ===");
-    console.log(JSON.stringify(req.body, null, 2));
     const entry = req.body.entry?.[0];
     const value = entry?.changes?.[0]?.value;
     if (!value) return responseHandler.noContent(res);
@@ -87,8 +84,6 @@ const handleWebhook = async (req, res) => {
         messageStatus,
         statuses,
       );
-
-      console.log(`Message ${statuses.id} updated to status: ${messageStatus}`);
     }
 
     responseHandler.Ok("Webhook processed", res);

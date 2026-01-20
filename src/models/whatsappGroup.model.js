@@ -6,16 +6,28 @@ const whatsappGroupSchema = new mongoose.Schema(
 
     members: [
       {
+        _id: false, 
         userId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "WhatsappUser",
           required: true,
         },
-        name: { type: String, required: true },
+
+        name: {
+          type: String,
+          required: true,
+        },
+
         role: {
           type: String,
           enum: ["ADMIN", "MEMBER"],
           default: "MEMBER",
+        },
+
+        source: {
+          type: String,
+          enum: ["WHATSAPP", "TELEGRAM", "SLACK"],
+          required: true,
         },
       },
     ],
@@ -27,7 +39,6 @@ const whatsappGroupSchema = new mongoose.Schema(
     },
     logo: { type: String, default: null },
   },
-
   { timestamps: true },
 );
 

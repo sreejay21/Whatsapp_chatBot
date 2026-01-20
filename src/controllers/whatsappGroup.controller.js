@@ -6,18 +6,28 @@ const createGroup = async (req, res) => {
   try {
     const { name, members } = req.body;
     const logoFile = req.file;
-    let logoUrl = null;
-    const encryptedMemberIds = normalizeArray(members);
+
+    if (!members?.userId) {
+      throw new Error("Member must contain userId");
+    }
+
+    const formattedMember = {
+      memberId: members.userId,
+      name: members.name,
+      source: members.source || "WHATSAPP",
+    };
+
     const encryptedCreatorId = encrypt(req.user.nameid);
 
+    let logoUrl = null;
     if (logoFile) {
-      logoUrl = `${process.env.BASE_URL}/uploads/${req.file.filename}`;
+      logoUrl = `${process.env.BASE_URL}/uploads/${logoFile.filename}`;
     }
 
     const group = await groupRepo.createGroup({
       name,
-      encryptedMemberIds,
-      encryptedCreatorId,
+      member: formattedMember, 
+      createdBy: encryptedCreatorId,
       logo: logoUrl,
     });
 
@@ -31,13 +41,17 @@ const createGroup = async (req, res) => {
           logo: group.logo,
         },
       },
-      res,
+      res
     );
   } catch (err) {
     console.error("Create group error:", err.message);
     return responseHandler.badRequest(res, err.message);
   }
 };
+
+
+
+
 
 const listAllGroups = async (req, res) => {
   try {
