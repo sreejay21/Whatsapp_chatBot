@@ -1,9 +1,6 @@
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
 
 const ACCESS_TOKEN = process.env.WHATSAPP_TOKEN;
 const GRAPH_URL = "https://graph.facebook.com/v19.0";
@@ -58,3 +55,5 @@ const downloadWhatsAppMedia = async (mediaId, mimeType) => {
     mimeType,
   };
 };
+
+module.exports = { downloadWhatsAppMedia };
