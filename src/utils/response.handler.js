@@ -21,8 +21,8 @@ module.exports = {
   unAuthorized: function (res) {
     res.status(401).send({ status: false, responsecode: 401, error: 'Unauthorized' })
   },
-  forbidden: function (res) {
-    res.status(403).send({ status: false, responsecode: 403, error: 'Forbidden' })
+  forbidden: function (res, msh) {
+    res.status(403).send({ status: false, responsecode: 403, error: 'Forbidden' , result: msh})
   },
   notFound: function (res) {
     res.status(404).send({ status: false, responsecode: 404, error: 'Request not found' })

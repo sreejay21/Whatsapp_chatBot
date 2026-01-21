@@ -12,47 +12,77 @@ const sendGroupMessage = async ({
   messageType,
   mediaUrl = null,
 }) => {
-  const groupId = decrypt(encryptedGroupId);
-  const senderId = decrypt(encryptedSenderId);
+  try {
+    const groupId = decrypt(encryptedGroupId);
+    const senderId = decrypt(encryptedSenderId);
 
-  // Fetch group
-  const group = await whatsappGroup.findById(groupId).select("name members");
-  if (!group) {
-    throw new Error("Group not found");
+    // Fetch group
+    const group = await whatsappGroup
+      .findById(groupId)
+      .select("name members");
+
+    if (!group) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: "Group not found",
+      };
+    }
+
+    // Fetch sender
+    const sender = await WhatsappUser
+      .findById(senderId)
+      .select("name");
+
+    if (!sender) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: "Sender not found",
+      };
+    }
+
+    // Check sender is a member
+    const isMember = group.members.some(
+      (m) => m.userId.toString() === senderId.toString()
+    );
+
+    if (!isMember) {
+      return {
+        success: false,
+        statusCode: 403,
+        message: "Sender is not a member of this group",
+      };
+    }
+
+    // Save message
+    const groupMessage = await GroupMessage.create({
+      groupId,
+      senderId,
+      senderName: sender.name,
+      groupName: group.name,
+      message: message || null,
+      messageType,
+      mediaUrl,
+    });
+
+    return {
+      success: true,
+      statusCode: 201,
+      message: "Message sent to group",
+      data: groupMessage,
+    };
+  } catch (error) {
+    console.error("sendGroupMessage error:", error);
+
+    return {
+      success: false,
+      statusCode: 500,
+      message: "Internal server error",
+    };
   }
-
-  // Fetch sender
-  const sender = await WhatsappUser.findById(senderId).select("name");
-  if (!sender) {
-    throw new Error("Sender not found");
-  }
-
-  // Check sender is a member
-  const isMember = group.members.some(
-    (m) => m.userId.toString() === senderId.toString(),
-  );
-
-  if (!isMember) {
-    throw new Error("Sender is not a member of this group");
-  }
-
-  // Save message
-  const groupMessage = await GroupMessage.create({
-    groupId,
-    senderId,
-    senderName: sender.name,
-    groupName: group.name,
-    message: message || null,
-    messageType,
-    mediaUrl,
-  });
-
-  return {
-    success: true,
-    message: "Message sent to group",
-    data: groupMessage,
-  };
 };
+
 
 const listGroupMessages = async (encryptedGroupId, page = 1, limit = 20) => {
   const groupId = decrypt(encryptedGroupId);

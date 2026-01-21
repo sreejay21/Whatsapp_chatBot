@@ -14,7 +14,7 @@ const sendMessageToGroup = async (req, res) => {
     if (!groupId || !senderId) {
       return responseHandler.badRequest(
         "groupId and senderId are required",
-        res,
+        res
       );
     }
 
@@ -22,24 +22,34 @@ const sendMessageToGroup = async (req, res) => {
       return responseHandler.badRequest("Message or file is required", res);
     }
 
-    let mediaUrl;
+    let mediaUrl = null;
     let messageType = "text";
 
     if (file) {
       mediaUrl = `${process.env.BASE_URL}/uploads/${file.filename}`;
-      messageType = file.mimetype.startsWith("image") ? "image" : "document";
+      messageType = file.mimetype.startsWith("image")
+        ? "image"
+        : "document";
     }
 
     const payload = {
       encryptedGroupId: groupId,
       encryptedSenderId: senderId,
       messageType,
+      message,
+      mediaUrl,
     };
 
-    if (message) payload.message = message;
-    if (mediaUrl) payload.mediaUrl = mediaUrl;
-
     const result = await sendGroupMessage(payload);
+
+      if (!result.success) {
+        return responseHandler.forbidden(
+          res,
+          result.message || "Member is not part of this group or group does not exist"
+        );
+      }
+
+
     const savedMessage = result.data;
 
     const responseData = {
@@ -57,9 +67,10 @@ const sendMessageToGroup = async (req, res) => {
     return responseHandler.Ok(responseData, res);
   } catch (error) {
     console.error("Error sending message to group:", error);
-    return responseHandler.badRequest(res);
+    return responseHandler.internalServerError(res);
   }
 };
+
 
 //List Group Messages
 const getGroupMessages = async (req, res) => {
