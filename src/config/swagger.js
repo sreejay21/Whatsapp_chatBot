@@ -16,7 +16,7 @@ const options = {
     // ✅ Server controlled by ENV (localhost by default)
     servers: [
       {
-        url: "http://localhost:3000",
+        url: "https://ritrowaapidev.azurewebsites.net",
         description: "Active API server",
       },
     ],
