@@ -9,37 +9,60 @@ const createGroupValidator = [
 
   body("members")
     .notEmpty()
-    .withMessage("Member object is required")
-    .custom((value) => {
+    .withMessage("Members is required")
+    .custom((value, { req }) => {
+      // Handle stringified JSON (multipart/form-data)
       if (typeof value === "string") {
         try {
           value = JSON.parse(value);
-        } catch (err) {
-          throw new Error("Members must be a valid JSON object");
+        } catch {
+          throw new Error("Members must be valid JSON");
         }
       }
 
+      // Normalize to array
+      const members = Array.isArray(value) ? value : [value];
 
-      if (typeof value !== "object" || Array.isArray(value)) {
-        throw new Error("Members must be an object");
+      if (!members.length) {
+        throw new Error("At least one member is required");
       }
 
-      const requiredFields = ["userId", "name", "source"];
-      for (const field of requiredFields) {
-        if (!value[field]) {
-          throw new Error(`members.${field} is required`);
+      members.forEach((member, index) => {
+        if (typeof member !== "object") {
+          throw new Error(`members[${index}] must be an object`);
         }
-      }
 
-      if (!["WHATSAPP", "TELEGRAM", "SLACK"].includes(value.source)) {
-        throw new Error("Invalid source value");
-      }
+        if (!member.externalUserId && !member.userId) {
+          throw new Error(
+            `members[${index}].externalUserId is required`
+          );
+        }
+
+        if (!member.name) {
+          throw new Error(`members[${index}].name is required`);
+        }
+
+        if (!member.source) {
+          throw new Error(`members[${index}].source is required`);
+        }
+
+        const source = member.source.toUpperCase();
+        if (!["WHATSAPP", "TELEGRAM", "SLACK"].includes(source)) {
+          throw new Error(
+            `members[${index}].source must be WHATSAPP, TELEGRAM, or SLACK`
+          );
+        }
+
+        // Normalize values back into req.body
+        member.source = source;
+        member.externalUserId =
+          member.externalUserId || member.userId;
+      });
+
+      // Replace request value with normalized array
+      req.body.members = members;
 
       return true;
     }),
 ];
-
-module.exports = createGroupValidator;
-
-
 module.exports = { createGroupValidator };

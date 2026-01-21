@@ -2,31 +2,65 @@ const whatsappGroup = require("../models/whatsappGroup.model");
 const WhatsappUser = require("../models/whatsappUser.model");
 const { decrypt } = require("../config/crypto.util");
 
-const createGroup = async ({ name, member, createdBy, logo }) => {
-  const memberId = decrypt(member.memberId);
+const createGroup = async ({ name, members, createdBy, logo }) => {
   const creatorId = decrypt(createdBy);
 
-  const uniqueIds = [...new Set([memberId, creatorId])];
-  const users = await WhatsappUser.find({ _id: { $in: uniqueIds } });
-  if (users.length !== uniqueIds.length) {
-    throw new Error("One or more users do not exist");
+
+  const creatorUser = await WhatsappUser.findById(creatorId);
+  if (!creatorUser) {
+    throw new Error("Creator does not exist");
   }
 
-  const members = users.map((user) => ({
-    userId: user._id,
-    name: user.name,
-    role: user._id.toString() === creatorId.toString() ? "ADMIN" : "MEMBER",
-    source: member.source,
-  }));
+
+  const memberUsers = await Promise.all(
+    members.map(async (member) => {
+      const source = member.source || "WHATSAPP";
+
+      return WhatsappUser.findOneAndUpdate(
+        {
+          externalUserId: member.externalUserId,
+          source,
+        },
+        {
+          $setOnInsert: {
+            externalUserId: member.externalUserId,
+            name: member.name || "Unknown User",
+            source,
+          },
+        },
+        { new: true, upsert: true }
+      );
+    })
+  );
+
+
+  const groupMembers = [
+    {
+      userId: creatorUser._id,
+      name: creatorUser.name,
+      role: "ADMIN",
+      source: creatorUser.source,
+    },
+    ...memberUsers
+      .filter(user => !user._id.equals(creatorUser._id)) 
+      .map(user => ({
+        userId: user._id,
+        name: user.name,
+        role: "MEMBER",
+        source: user.source,
+      })),
+  ];
 
   return whatsappGroup.create({
     name,
-    members,
-    createdBy: creatorId,
+    members: groupMembers,
+    createdBy: creatorUser._id,
     logo,
-    source: member.source,
+    source: "WHATSAPP",
   });
 };
+
+
 
 const listAllGroups = async ({ page, limit }) => {
   const skip = (page - 1) * limit;

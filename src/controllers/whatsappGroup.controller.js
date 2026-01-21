@@ -7,15 +7,9 @@ const createGroup = async (req, res) => {
     const { name, members } = req.body;
     const logoFile = req.file;
 
-    if (!members?.userId) {
-      throw new Error("Member must contain userId");
+    if (!Array.isArray(members) || !members.length) {
+      throw new Error("At least one member is required");
     }
-
-    const formattedMember = {
-      memberId: members.userId,
-      name: members.name,
-      source: members.source || "WHATSAPP",
-    };
 
     const encryptedCreatorId = encrypt(req.user.nameid);
 
@@ -26,7 +20,7 @@ const createGroup = async (req, res) => {
 
     const group = await groupRepo.createGroup({
       name,
-      member: formattedMember, 
+      members,            
       createdBy: encryptedCreatorId,
       logo: logoUrl,
     });
@@ -48,6 +42,7 @@ const createGroup = async (req, res) => {
     return responseHandler.badRequest(res, err.message);
   }
 };
+
 
 
 

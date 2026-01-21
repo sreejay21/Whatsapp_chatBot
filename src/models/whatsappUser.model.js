@@ -2,11 +2,16 @@ const mongoose = require("mongoose");
 
 const whatsappUserSchema = new mongoose.Schema(
   {
-    encryptedPhone: {
+    externalUserId: {
       type: String,
-      required: true,
       unique: true,
       index: true,
+    },
+
+    encryptedPhone: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
 
     name: {
@@ -17,6 +22,7 @@ const whatsappUserSchema = new mongoose.Schema(
     source: {
       type: String,
       enum: ["WHATSAPP", "TELEGRAM", "SLACK"],
+      required: true,
     },
   },
   { timestamps: true }
