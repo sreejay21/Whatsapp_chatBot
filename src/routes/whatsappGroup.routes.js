@@ -13,7 +13,7 @@ const whatsappGroupMessageController = require("../controllers/whatsappGroupMess
  * /api/whatsapp-groups/create-groupChat:
  *   post:
  *     summary: Create a new group
- *     description: Create a new WhatsApp group with members and optional logo
+ *     description: Create a new WhatsApp/Slack/Telegram group with members and optional logo
  *     tags:
  *       - Groups
  *     security:
@@ -32,15 +32,34 @@ const whatsappGroupMessageController = require("../controllers/whatsappGroupMess
  *                 type: string
  *                 description: Group name
  *                 example: Team Chat
+ *
  *               members:
  *                 type: array
+ *                 description: List of members to be added to the group
  *                 items:
- *                   type: string
- *                 description: Array of encrypted member IDs
+ *                   type: object
+ *                   required:
+ *                     - userId
+ *                     - name
+ *                     - source
+ *                   properties:
+ *                     userId:
+ *                       type: string
+ *                       description: External user identifier (WhatsApp/Slack/etc)
+ *                       example: U0A1L9VE9B3
+ *                     name:
+ *                       type: string
+ *                       example: John Doe
+ *                     source:
+ *                       type: string
+ *                       enum: [WHATSAPP, TELEGRAM, SLACK]
+ *                       example: WHATSAPP
+ *
  *               logo:
  *                 type: string
  *                 format: binary
  *                 description: Optional group logo image
+ *
  *     responses:
  *       200:
  *         description: Group created successfully
@@ -51,33 +70,26 @@ const whatsappGroupMessageController = require("../controllers/whatsappGroupMess
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 data:
  *                   type: object
  *                   properties:
  *                     groupId:
  *                       type: string
+ *                       example: 65b1c9f2e3a4c9a12a34abcd
  *                     name:
  *                       type: string
+ *                       example: Team Chat
  *                     membersCount:
  *                       type: integer
+ *                       example: 3
+ *
  *       400:
- *         description: Bad request - missing required fields or validation error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: Bad request - validation error
  *       401:
- *         description: Unauthorized - missing or invalid authentication token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: Unauthorized
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.post(
   "/create-groupChat",

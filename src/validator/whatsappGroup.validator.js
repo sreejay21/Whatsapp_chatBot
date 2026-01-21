@@ -11,7 +11,6 @@ const createGroupValidator = [
     .notEmpty()
     .withMessage("Members is required")
     .custom((value, { req }) => {
-      // Handle stringified JSON (multipart/form-data)
       if (typeof value === "string") {
         try {
           value = JSON.parse(value);
@@ -20,7 +19,6 @@ const createGroupValidator = [
         }
       }
 
-      // Normalize to array
       const members = Array.isArray(value) ? value : [value];
 
       if (!members.length) {
@@ -53,13 +51,11 @@ const createGroupValidator = [
           );
         }
 
-        // Normalize values back into req.body
         member.source = source;
         member.externalUserId =
           member.externalUserId || member.userId;
       });
 
-      // Replace request value with normalized array
       req.body.members = members;
 
       return true;
