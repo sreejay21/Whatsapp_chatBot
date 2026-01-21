@@ -179,7 +179,6 @@ const sendMediaController = async (req, res) => {
     const mediaUrl = req.file
       ? `${process.env.BASE_URL}/uploads/${req.file.filename}`
       : link || null;
-    console.log("mediaUrl", mediaUrl);
 
     // Prepare WhatsApp payload
     let payload;
@@ -191,6 +190,7 @@ const sendMediaController = async (req, res) => {
         image: link
           ? { link }
           : { id: mediaResponse.id, ...(caption && { caption }) },
+        size: req.file ? req.file.size : null,
       };
     } else if (type === "document") {
       payload = {
@@ -204,6 +204,7 @@ const sendMediaController = async (req, res) => {
               ...(caption && { caption }),
               ...(filename && { filename }),
             },
+        size: req.file ? req.file.size : null,
       };
     } else {
       throw new Error("Unsupported media type. Must be 'image' or 'document'.");
@@ -211,7 +212,6 @@ const sendMediaController = async (req, res) => {
 
     // Send message
     const sendResponse = await whatsAppRepository.sendMessage(payload);
-
     // Save outgoing message (store encrypted number)
     await whatsAppRepository.saveOutgoingMessage({
       to: encryptedTo,
@@ -222,6 +222,8 @@ const sendMediaController = async (req, res) => {
       status: "SENT",
       requestPayload: sanitizeOutgoingPayload(payload),
       responsePayload: sanitizeOutgoingPayload(sendResponse),
+      fileName: req.file ? req.file.filename : null,
+      size: req.file ? req.file.size : null,
     });
 
     // Encrypt response for client

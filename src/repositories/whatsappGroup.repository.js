@@ -2,19 +2,11 @@ const whatsappGroup = require("../models/whatsappGroup.model");
 const WhatsappUser = require("../models/whatsappUser.model");
 const { decrypt } = require("../config/crypto.util");
 
-const createGroup = async ({
-  name,
-  encryptedMemberIds,
-  encryptedCreatorId,
-  logo,
-}) => {
-  // Decrypt IDs
-  const memberIds = encryptedMemberIds.map((id) => decrypt(id));
-  const creatorId = decrypt(encryptedCreatorId);
+const createGroup = async ({ name, member, createdBy, logo }) => {
+  const memberId = decrypt(member.memberId);
+  const creatorId = decrypt(createdBy);
 
-  // Remove duplicates
-  const uniqueIds = [...new Set([...memberIds, creatorId])];
-  // Validate users exist
+  const uniqueIds = [...new Set([memberId, creatorId])];
   const users = await WhatsappUser.find({ _id: { $in: uniqueIds } });
   if (users.length !== uniqueIds.length) {
     throw new Error("One or more users do not exist");
@@ -24,6 +16,7 @@ const createGroup = async ({
     userId: user._id,
     name: user.name,
     role: user._id.toString() === creatorId.toString() ? "ADMIN" : "MEMBER",
+    source: member.source,
   }));
 
   return whatsappGroup.create({
@@ -31,6 +24,7 @@ const createGroup = async ({
     members,
     createdBy: creatorId,
     logo,
+    source: member.source,
   });
 };
 

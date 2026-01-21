@@ -28,6 +28,12 @@ const outgoingWhatsappMessageSchema = new mongoose.Schema(
     mediaUrl: {
       type: String,
     },
+    fileName: {
+      type: String,
+    },
+    size: {
+      type: Number,
+    },
   },
 
   { timestamps: true },

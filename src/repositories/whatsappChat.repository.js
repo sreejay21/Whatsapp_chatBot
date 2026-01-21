@@ -7,13 +7,17 @@ const getUserChatHistory = async ({ encryptedPhone, page = 1, limit = 20 }) => {
   const incomingQuery = WhatsappIncomingMessage.find({
     from: encryptedPhone,
   })
-    .select("type textBody rawPayload createdAt messageId status mediaUrl")
+    .select(
+      "type textBody rawPayload createdAt messageId status mediaUrl fileName size",
+    )
     .lean();
 
   const outgoingQuery = WhatsappOutgoingMessage.find({
     to: encryptedPhone,
   })
-    .select("type requestPayload createdAt whatsappMessageId status mediaUrl")
+    .select(
+      "type requestPayload createdAt whatsappMessageId status mediaUrl fileName size",
+    )
     .lean();
 
   const [incoming, outgoing] = await Promise.all([
@@ -25,10 +29,12 @@ const getUserChatHistory = async ({ encryptedPhone, page = 1, limit = 20 }) => {
     direction: "incoming",
     messageId: msg.messageId,
     type: msg.type,
-    text: msg.textBody || msg.rawPayload?.messages?.[0]?.text?.body || null,
+    text: msg.textBody || msg.rawPayload?.messages?.[0]?.text?.body || msg?.rawPayload?.messages?.[0]?.document?.caption || msg?.rawPayload?.messages?.[0]?.image?.caption || null,
     status: msg.status,
     createdAt: msg.createdAt,
     mediaUrl: msg.mediaUrl || null,
+    fileName: msg.fileName || null,
+    size: msg.size || null,
   }));
 
   const normalizedOutgoing = outgoing.map((msg) => ({
@@ -38,10 +44,14 @@ const getUserChatHistory = async ({ encryptedPhone, page = 1, limit = 20 }) => {
     text:
       msg.requestPayload?.text?.body ||
       msg.requestPayload?.template?.name ||
+      msg.requestPayload?.image?.caption ||
+      msg.requestPayload?.document?.caption ||
       null,
     status: msg.status,
     createdAt: msg.createdAt,
     mediaUrl: msg.mediaUrl || null,
+    fileName: msg.fileName || null,
+    size: msg.size || null,
   }));
 
   const combined = [...normalizedIncoming, ...normalizedOutgoing].sort(

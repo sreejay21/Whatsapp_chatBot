@@ -11,18 +11,16 @@ const verifyWebhook = (req, res) => {
   const challenge = req.query["hub.challenge"];
   const token = req.query["hub.verify_token"];
 
-  if (mode && token === process.env.WEBHOOK_VERIFY_TOKEN) {
-    return responseHandler.Ok(challenge, res);
+  if (mode === "subscribe" && token === process.env.WEBHOOK_VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
   }
-  return responseHandler.forbidden(res);
+
+  return res.sendStatus(403);
 };
 
 // Webhook handler
 const handleWebhook = async (req, res) => {
   try {
-    // Log the full incoming payload
-    console.log("=== Incoming Webhook ===");
-    console.log(JSON.stringify(req.body, null, 2));
     const entry = req.body.entry?.[0];
     const value = entry?.changes?.[0]?.value;
     if (!value) return responseHandler.noContent(res);
@@ -33,30 +31,32 @@ const handleWebhook = async (req, res) => {
     // ===== Handle Incoming Messages (SAVE ONCE) =====
     if (messages) {
       const encryptedFrom = encrypt(messages.from);
-      let mediaUrl;
+      let mediaData = null;
 
-      // ===== IMAGE HANDLING =====
-      if (messages.type === "image") {
-        const mediaId = messages.image.id;
-        const mimeType = messages.image.mime_type;
-        mediaUrl = await whatsappMediaRepo.downloadWhatsAppMedia(
-          mediaId,
-          mimeType,
+      if (messages.type === "image" || messages.type === "document") {
+        const media = messages[messages.type];
+
+        mediaData = await whatsappMediaRepo.downloadWhatsAppMedia(
+          media.id,
+          media.mime_type,
         );
       }
-
       await whatsAppRepo.saveIncomingMessage({
         from: encryptedFrom,
-        type: "image",
+        type: messages.type,
         messageId: messages.id,
 
-        mediaUrl,
+        mediaUrl: mediaData?.url || null,
 
-        mediaMeta: {
-          mediaId: messages.image.id,
-          mimeType: messages.image.mime_type,
-          sha256: messages.image.sha256,
-        },
+        fileName: mediaData?.fileName || null,
+        size: mediaData?.size || null,
+        mediaMeta: mediaData
+          ? {
+              mediaId: messages[messages.type].id,
+              mimeType: messages[messages.type].mime_type,
+              sha256: messages[messages.type].sha256,
+            }
+          : null,
 
         rawPayload: sanitizeWhatsAppPayload(value),
       });
@@ -84,8 +84,6 @@ const handleWebhook = async (req, res) => {
         messageStatus,
         statuses,
       );
-
-      console.log(`Message ${statuses.id} updated to status: ${messageStatus}`);
     }
 
     responseHandler.Ok("Webhook processed", res);
