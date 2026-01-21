@@ -18,12 +18,12 @@ const createGroup = async ({ name, members, createdBy, logo }) => {
 
       return WhatsappUser.findOneAndUpdate(
         {
-          externalUserId: member.externalUserId,
+          externalUserId: member.userId,
           source,
         },
         {
           $setOnInsert: {
-            externalUserId: member.externalUserId,
+            externalUserId: member.userId,
             name: member.name || "Unknown User",
             source,
           },
