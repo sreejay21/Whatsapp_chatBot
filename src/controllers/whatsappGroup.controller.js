@@ -44,10 +44,6 @@ const createGroup = async (req, res) => {
 };
 
 
-
-
-
-
 const listAllGroups = async (req, res) => {
   try {
     const { page, limit } = req.query;
@@ -59,9 +55,15 @@ const listAllGroups = async (req, res) => {
 
     const groups = result.groups.map((group) => ({
       groupId: encrypt(group._id.toString()),
-      name: group.name,
-      logo: group.logo,
-      membersCount: group.members.length,
+      groupName: group?.name,
+      logo: group?.logo,
+      membersCount: group?.members?.length,
+      members: group.members.map((member) => ({
+      userId: encrypt(member.userId.toString()),
+      name: member?.name,
+      role: member?.role,
+      source: member?.source,
+      })),
       createdAt: group.createdAt,
     }));
 
