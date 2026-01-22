@@ -22,7 +22,6 @@ const whatsappUserSchema = new mongoose.Schema(
     source: {
       type: String,
       enum: ["WHATSAPP", "TELEGRAM", "SLACK"],
-      required: true,
     },
   },
   { timestamps: true }
