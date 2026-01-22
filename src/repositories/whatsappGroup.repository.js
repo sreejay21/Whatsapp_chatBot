@@ -4,35 +4,36 @@ const { decrypt } = require("../config/crypto.util");
 
 const createGroup = async ({ name, members, createdBy, logo }) => {
   const creatorId = decrypt(createdBy);
-
-
   const creatorUser = await WhatsappUser.findById(creatorId);
-  if (!creatorUser) {
-    throw new Error("Creator does not exist");
-  }
-
-
   const memberUsers = await Promise.all(
     members.map(async (member) => {
       const source = member.source || "WHATSAPP";
 
+      if (source === "WHATSAPP") {
+        const decryptedUserId = decrypt(member.userId);
+        const existingUser = await WhatsappUser.findById(decryptedUserId);
+        return existingUser;
+      }
+
+
       return WhatsappUser.findOneAndUpdate(
         {
           externalUserId: member.userId,
-          source,
         },
         {
           $setOnInsert: {
             externalUserId: member.userId,
-            name: member.name || "Unknown User",
+            name: member.name,
             source,
           },
         },
-        { new: true, upsert: true }
+        {
+          new: true,
+          upsert: true,
+        }
       );
     })
   );
-
 
   const groupMembers = [
     {
@@ -42,7 +43,7 @@ const createGroup = async ({ name, members, createdBy, logo }) => {
       source: creatorUser.source,
     },
     ...memberUsers
-      .filter(user => !user._id.equals(creatorUser._id)) 
+      .filter(user => user && !user._id.equals(creatorUser._id))
       .map(user => ({
         userId: user._id,
         name: user.name,
@@ -56,7 +57,6 @@ const createGroup = async ({ name, members, createdBy, logo }) => {
     members: groupMembers,
     createdBy: creatorUser._id,
     logo,
-    source: "WHATSAPP",
   });
 };
 

@@ -7,9 +7,6 @@ const createGroup = async (req, res) => {
     const { name, members } = req.body;
     const logoFile = req.file;
 
-    if (!Array.isArray(members) || !members.length) {
-      throw new Error("At least one member is required");
-    }
 
     const encryptedCreatorId = encrypt(req.user.nameid);
 
