@@ -14,14 +14,15 @@ const updateUserName = async (userId, name) => {
 
 const listUsers = async ({ page = 1, limit = 20 } = {}) => {
   const skip = (page - 1) * limit;
+  const filter = { source: "WHATSAPP" };
 
   const [users, total] = await Promise.all([
-    WhatsappUser.find({})
+    WhatsappUser.find(filter)
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
-    WhatsappUser.countDocuments(),
+    WhatsappUser.countDocuments(filter),
   ]);
 
   return {
