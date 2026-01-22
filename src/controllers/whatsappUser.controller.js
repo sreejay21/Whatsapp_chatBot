@@ -15,7 +15,7 @@ const saveWhatsappUser = async (webhookValue) => {
     const existingUser =
       await whatsappUserRepo.findByEncryptedPhone(encryptedPhone);
 
-    // 🔁 Update name if changed
+    // Update name if changed
     if (existingUser) {
       if (name && existingUser.name !== name) {
         return await whatsappUserRepo.updateUserName(existingUser._id, name);
@@ -23,10 +23,11 @@ const saveWhatsappUser = async (webhookValue) => {
       return existingUser;
     }
 
-    // 🆕 Create new user
+    //  Create new user
     return await whatsappUserRepo.createUser({
       encryptedPhone,
       name,
+      source: "WHATSAPP",
     });
   } catch (err) {
     console.error("Error saving WhatsApp user:", err);
