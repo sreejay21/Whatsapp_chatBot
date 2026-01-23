@@ -32,6 +32,37 @@ const getWhatsappChatHistory = async (req, res) => {
   }
 };
 
+const validateWhatsappNumber = async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+
+    const params = new URLSearchParams();
+    params.append("phone_number", phoneNumber);
+
+    const response = await fetch(
+      "https://whatsapp-number-validator3.p.rapidapi.com/WhatsappNumberHasItWithToken",
+      {
+        method: "POST",
+        headers: {
+          "x-rapidapi-key": process.env.RAPID_API_KEY,
+          "x-rapidapi-host": "whatsapp-number-validator3.p.rapidapi.com",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      }
+    );
+
+    const data = await response.json();
+    responseHandler.Ok(data, res);
+
+  } catch (error) {
+    return responseHandler.internalServerError(res, error.message);
+  }
+};
+
+
+
 module.exports = {
   getWhatsappChatHistory,
+  validateWhatsappNumber,
 };
