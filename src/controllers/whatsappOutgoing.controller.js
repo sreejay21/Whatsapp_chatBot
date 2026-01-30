@@ -1,4 +1,5 @@
 const whatsAppRepository = require("../repositories/whatsappOutgoing.repository");
+const whatsAppUserRepository = require("../repositories/whatsappUser.repository");
 const { encrypt, decrypt } = require("../config/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 const responseHandler = require("../utils/response.handler");
@@ -48,6 +49,22 @@ const sendTextMessage = async (req, res) => {
     };
 
     const response = await whatsAppRepository.sendMessage(payload);
+    const name = req.body.name || '';
+
+    try {
+      const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
+        encryptedTo,
+      );
+      if (!existingUser) {
+        await whatsAppUserRepository.createUser({
+          encryptedPhone: encryptedTo,
+          source: "WHATSAPP",
+          name: name || '',
+        });
+      }
+    } catch (e) {
+      console.error("Error ensuring whatsapp user exists:", e.message || e);
+    }
 
     // Save ONLY encrypted value
     await whatsAppRepository.saveOutgoingMessage({
@@ -112,7 +129,7 @@ const sendTemplateMessage = async (req, res) => {
 };
 
 // --- Hello World Template
-const sendHelloWorldTemplate = async (req, res) => {
+const sendwelcomeMessageTemplate = async (req, res) => {
   try {
     const { to: encryptedTo } = req.body;
 
@@ -127,12 +144,41 @@ const sendHelloWorldTemplate = async (req, res) => {
       to: decryptedTo,
       type: "template",
       template: {
-        name: "avtest",
-        language: { code: "en" },
+        name: "ritro_welcome",
+        language: { code: "en_US" },
       },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              text: name || "User",
+            },  
+          ],
+        },
+      ],
     };
 
     const response = await whatsAppRepository.sendMessage(payload);
+
+        const name = req.body.name || '';
+
+    try {
+      const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
+        encryptedTo,
+      );
+      if (!existingUser) {
+        await whatsAppUserRepository.createUser({
+          encryptedPhone: encryptedTo,
+          source: "WHATSAPP",
+          name: name || '',
+        });
+      }
+    } catch (e) {
+      console.error("Error ensuring whatsapp user exists:", e.message || e);
+    }
+
 
     await whatsAppRepository.saveOutgoingMessage({
       to: encryptedTo,
@@ -212,6 +258,25 @@ const sendMediaController = async (req, res) => {
 
     // Send message
     const sendResponse = await whatsAppRepository.sendMessage(payload);
+
+    const name = req.body.name || '';
+
+    try {
+      const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
+        encryptedTo,
+      );
+      if (!existingUser) {
+        await whatsAppUserRepository.createUser({
+          encryptedPhone: encryptedTo,
+          source: "WHATSAPP",
+          name: name || '',
+        });
+      }
+    } catch (e) {
+      console.error("Error ensuring whatsapp user exists:", e.message || e);
+    }
+
+
     // Save outgoing message (store encrypted number)
     await whatsAppRepository.saveOutgoingMessage({
       to: encryptedTo,
@@ -241,6 +306,6 @@ const sendMediaController = async (req, res) => {
 module.exports = {
   sendTextMessage,
   sendTemplateMessage,
-  sendHelloWorldTemplate,
+  sendwelcomeMessageTemplate,
   sendMediaController,
 };

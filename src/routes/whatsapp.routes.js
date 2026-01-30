@@ -92,10 +92,10 @@ router.post("/send-template", whatsAppController.sendTemplateMessage);
 
 /**
  * @swagger
- * /api/whatsapp/send-hello-world-template:
+ * /api/whatsapp/sendwelcomeMessageTemplate:
  *   post:
- *     summary: Send hello world template
- *     description: Send a predefined hello world template message
+ *     summary: Send Welcome message template
+ *     description: Send a predefined welcome template message
  *     tags:
  *       - Messages
  *     requestBody:
@@ -112,7 +112,7 @@ router.post("/send-template", whatsAppController.sendTemplateMessage);
  *                 description: Encrypted recipient phone number
  *     responses:
  *       200:
- *         description: Hello world template sent successfully
+ *         description: Initial 
  *         content:
  *           application/json:
  *             schema:
@@ -138,8 +138,8 @@ router.post("/send-template", whatsAppController.sendTemplateMessage);
  *               $ref: '#/components/schemas/Error'
  */
 router.post(
-  "/send-hello-world-template",
-  whatsAppController.sendHelloWorldTemplate,
+  "/sendwelcomeMessageTemplate",
+  whatsAppController.sendwelcomeMessageTemplate,
 );
 
 /**
