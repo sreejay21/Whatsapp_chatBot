@@ -127,8 +127,8 @@ const sendHelloWorldTemplate = async (req, res) => {
       to: decryptedTo,
       type: "template",
       template: {
-        name: "hello_world",
-        language: { code: "en_US" },
+        name: "avtest",
+        language: { code: "en" },
       },
     };
 
