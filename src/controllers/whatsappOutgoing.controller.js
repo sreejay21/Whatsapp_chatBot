@@ -60,6 +60,7 @@ const sendTextMessage = async (req, res) => {
           encryptedPhone: encryptedTo,
           source: "WHATSAPP",
           name: name || '',
+          externalUserId: encryptedTo,
         });
       }
     } catch (e) {
@@ -173,6 +174,7 @@ const sendwelcomeMessageTemplate = async (req, res) => {
           encryptedPhone: encryptedTo,
           source: "WHATSAPP",
           name: name || '',
+          externalUserId: encryptedTo,
         });
       }
     } catch (e) {
@@ -259,7 +261,7 @@ const sendMediaController = async (req, res) => {
     // Send message
     const sendResponse = await whatsAppRepository.sendMessage(payload);
 
-    const name = req.body.name || '';
+     const name = req.body.name || '';
 
     try {
       const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
@@ -270,12 +272,12 @@ const sendMediaController = async (req, res) => {
           encryptedPhone: encryptedTo,
           source: "WHATSAPP",
           name: name || '',
+          externalUserId: encryptedTo,
         });
       }
     } catch (e) {
       console.error("Error ensuring whatsapp user exists:", e.message || e);
     }
-
 
     // Save outgoing message (store encrypted number)
     await whatsAppRepository.saveOutgoingMessage({
