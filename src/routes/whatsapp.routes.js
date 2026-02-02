@@ -223,13 +223,13 @@ router.post("/send-media", whatsAppController.sendMediaController);
  *             type: object
  *             required:
  *               - to
- *               - media_type
+ *               - type
  *               - file
  *             properties:
  *               to:
  *                 type: string
  *                 description: Encrypted recipient phone number
- *               media_type:
+ *               type:
  *                 type: string
  *                 enum: [image, document, video, audio]
  *                 description: Type of media
