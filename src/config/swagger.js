@@ -16,7 +16,7 @@ const options = {
     // ✅ Server controlled by ENV (localhost by default)
     servers: [
       {
-        url: "https://ritrowaapidev.azurewebsites.net",
+        url: "http://localhost:3000",
         description: "Active API server",
       },
     ],
@@ -47,6 +47,7 @@ const options = {
         },
 
         TextMessage: {
+          description: "Legacy text message schema. Prefer `DirectText` or `GroupText` for clarity.",
           type: "object",
           required: ["to", "message"],
           properties: {
@@ -59,6 +60,45 @@ const options = {
               type: "string",
               description: "Message body",
               example: "Hello, how are you?",
+            },
+          },
+        },
+
+        DirectText: {
+          type: "object",
+          required: ["to", "message"],
+          properties: {
+            to: {
+              type: "string",
+              description: "Encrypted recipient phone number for one-to-one messages",
+              example: "encrypted_phone_number",
+            },
+            message: {
+              type: "string",
+              description: "Message body",
+              example: "Hello, how are you?",
+            },
+          },
+        },
+
+        GroupText: {
+          type: "object",
+          required: ["groupId", "senderId", "message"],
+          properties: {
+            groupId: {
+              type: "string",
+              description: "Encrypted group identifier",
+              example: "encrypted_group_id",
+            },
+            senderId: {
+              type: "string",
+              description: "Encrypted sender user id",
+              example: "encrypted_sender_id",
+            },
+            message: {
+              type: "string",
+              description: "Message body to send to the group",
+              example: "Hello team, standup at 10am",
             },
           },
         },
@@ -88,6 +128,23 @@ const options = {
               items: {
                 type: "object",
               },
+            },
+          },
+        },
+
+        WelcomeMessage: {
+          type: "object",
+          required: ["to"],
+          properties: {
+            to: {
+              type: "string",
+              description: "Encrypted recipient phone number",
+              example: "encrypted_phone_number",
+            },
+            name: {
+              type: "string",
+              description: "User's name to include in the welcome message",
+              example: "John Doe",
             },
           },
         },
