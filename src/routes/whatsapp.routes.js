@@ -94,8 +94,8 @@ router.post("/send-template", whatsAppController.sendTemplateMessage);
  * @swagger
  * /api/whatsapp/sendwelcomeMessageTemplate:
  *   post:
- *     summary: Send Welcome message template
- *     description: Send a predefined welcome template message
+ *     summary: Send Welcome Message Template
+ *     description: Send a predefined welcome template message to a WhatsApp user. Creates user if they don't exist.
  *     tags:
  *       - Messages
  *     requestBody:
@@ -110,9 +110,14 @@ router.post("/send-template", whatsAppController.sendTemplateMessage);
  *               to:
  *                 type: string
  *                 description: Encrypted recipient phone number
+ *                 example: "encrypted_phone_number"
+ *               name:
+ *                 type: string
+ *                 description: User's name to include in the welcome message
+ *                 example: "John Doe"
  *     responses:
  *       200:
- *         description: Initial 
+ *         description: Welcome template message sent successfully
  *         content:
  *           application/json:
  *             schema:
@@ -120,12 +125,15 @@ router.post("/send-template", whatsAppController.sendTemplateMessage);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 data:
  *                   type: object
+ *                   description: WhatsApp API response with message ID
  *                 message:
  *                   type: string
+ *                   example: "Message sent successfully"
  *       400:
- *         description: Bad request
+ *         description: Bad request - missing required field (to)
  *         content:
  *           application/json:
  *             schema:

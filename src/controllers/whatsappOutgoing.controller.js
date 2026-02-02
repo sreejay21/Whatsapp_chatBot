@@ -132,7 +132,7 @@ const sendTemplateMessage = async (req, res) => {
 // --- Hello World Template
 const sendwelcomeMessageTemplate = async (req, res) => {
   try {
-    const { to: encryptedTo } = req.body;
+    const { to: encryptedTo, name = "User" } = req.body;
 
     if (!encryptedTo) {
       return responseHandler.badRequest("Recipient is required", res);
@@ -147,40 +147,38 @@ const sendwelcomeMessageTemplate = async (req, res) => {
       template: {
         name: "ritro_welcome",
         language: { code: "en_US" },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              {
+                type: "text",
+                text: name,
+              },
+            ],
+          },
+        ],
       },
-      components: [
-        {
-          type: "body",
-          parameters: [
-            {
-              type: "text",
-              text: name || "User",
-            },  
-          ],
-        },
-      ],
     };
 
     const response = await whatsAppRepository.sendMessage(payload);
 
-        const name = req.body.name || '';
-
+    // Save / create user
     try {
-      const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
-        encryptedTo,
-      );
+      const existingUser =
+        await whatsAppUserRepository.findByEncryptedPhone(encryptedTo);
+
       if (!existingUser) {
         await whatsAppUserRepository.createUser({
           encryptedPhone: encryptedTo,
           source: "WHATSAPP",
-          name: name || '',
+          name,
           externalUserId: encryptedTo,
         });
       }
     } catch (e) {
       console.error("Error ensuring whatsapp user exists:", e.message || e);
     }
-
 
     await whatsAppRepository.saveOutgoingMessage({
       to: encryptedTo,
@@ -191,10 +189,8 @@ const sendwelcomeMessageTemplate = async (req, res) => {
       responsePayload: sanitizeOutgoingPayload(response),
     });
 
-    const encryptedResponse = encryptWhatsappResponseForClient(
-      response,
-      encryptedTo,
-    );
+    const encryptedResponse =
+      encryptWhatsappResponseForClient(response, encryptedTo);
 
     responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
