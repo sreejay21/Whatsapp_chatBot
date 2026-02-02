@@ -48,15 +48,20 @@ http://localhost:3000/api-docs/swagger.json
   }
   ```
 
-#### 3. Send Hello World Template
-- **POST** `/api/whatsapp/send-hello-world-template`
-- **Description**: Send a predefined hello world template
+#### 3. Send Welcome Message Template
+- **POST** `/api/whatsapp/sendwelcomeMessageTemplate`
+- **Description**: Send a predefined welcome template message to a WhatsApp user. Creates user if they don't exist.
 - **Body**:
   ```json
   {
-    "to": "encrypted_phone_number"
+    "to": "encrypted_phone_number",
+    "name": "John Doe"
   }
   ```
+- **Parameters**:
+  - `to` (required): Encrypted recipient phone number
+  - `name` (optional): User's name to include in the welcome message (default: "User")
+- **Response**: Message sent confirmation with encrypted contact info
 
 #### 4. Send Media via URL
 - **POST** `/api/whatsapp/send-media`
