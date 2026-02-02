@@ -212,7 +212,7 @@ router.post("/send-media", whatsAppController.sendMediaController);
  * /api/whatsapp/send-media-upload:
  *   post:
  *     summary: Send media message via file upload
- *     description: Send image, document, video, or audio by uploading a file
+ *     description: Send image or document to a user or a group by uploading a file
  *     tags:
  *       - Messages
  *     requestBody:
@@ -222,16 +222,22 @@ router.post("/send-media", whatsAppController.sendMediaController);
  *           schema:
  *             type: object
  *             required:
- *               - to
  *               - type
- *               - file
  *             properties:
+ *               # Direct message
  *               to:
  *                 type: string
- *                 description: Encrypted recipient phone number
+ *                 description: Encrypted recipient phone number (for direct messages)
+ *               # Group message
+ *               groupId:
+ *                 type: string
+ *                 description: Encrypted group ID (for group messages)
+ *               senderId:
+ *                 type: string
+ *                 description: Encrypted sender ID (required for group messages)
  *               type:
  *                 type: string
- *                 enum: [image, document, video, audio]
+ *                 enum: [image, document]
  *                 description: Type of media
  *               caption:
  *                 type: string

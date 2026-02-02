@@ -226,105 +226,117 @@ const sendwelcomeMessageTemplate = async (req, res) => {
 // --- Unified Media Controller (Image / Document, Upload or Link)
 const sendMediaController = async (req, res) => {
   try {
-    const { to, link, caption, filename, type } = req.body;
+    const { to, groupId, senderId, link, caption, filename, type, name } = req.body;
 
-    const encryptedTo = to;
-    const decryptedTo = decrypt(to);
+    if (!type || (!to && !(groupId && senderId))) {
+      return responseHandler.getErrorResult(
+        "Invalid request: provide media type and either 'to' (direct) or 'groupId' + 'senderId' (group).",
+        res
+      );
+    }
 
-    let mediaResponse;
+    let mediaResponse = null;
     if (req.file) {
       mediaResponse =
         type === "image"
-          ? await whatsAppRepository.uploadImage(
-              req.file.path,
-              req.file.mimetype,
-            )
-          : await whatsAppRepository.uploadDocument(
-              req.file.path,
-              req.file.mimetype,
-            );
+          ? await whatsAppRepository.uploadImage(req.file.path, req.file.mimetype)
+          : await whatsAppRepository.uploadDocument(req.file.path, req.file.mimetype);
     }
 
     const mediaUrl = req.file
       ? `${process.env.BASE_URL}/uploads/${req.file.filename}`
       : link || null;
 
-    // Prepare WhatsApp payload
-    let payload;
-    if (type === "image") {
-      payload = {
-        messaging_product: "whatsapp",
-        to: decryptedTo,
-        type: "image",
-        image: link
-          ? { link }
-          : { id: mediaResponse.id, ...(caption && { caption }) },
-        size: req.file ? req.file.size : null,
-      };
-    } else if (type === "document") {
-      payload = {
-        messaging_product: "whatsapp",
-        to: decryptedTo,
-        type: "document",
-        document: link
-          ? { link }
-          : {
-              id: mediaResponse.id,
-              ...(caption && { caption }),
-              ...(filename && { filename }),
-            },
-        size: req.file ? req.file.size : null,
-      };
-    } else {
-      throw new Error("Unsupported media type. Must be 'image' or 'document'.");
-    }
+    // ----- CASE 1: Group Message -----
+    if (groupId && senderId) {
+      const groupResult = await sendGroupMessage({
+        encryptedGroupId: groupId,
+        encryptedSenderId: senderId,
+        message: caption || null,
+        messageType: type,
+        mediaUrl: mediaUrl,
+      });
 
-    // Send message
-    const sendResponse = await whatsAppRepository.sendMessage(payload);
-
-     const name = req.body.name || '';
-
-    try {
-      const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
-        encryptedTo,
-      );
-      if (!existingUser) {
-        await whatsAppUserRepository.createUser({
-          encryptedPhone: encryptedTo,
-          source: "WHATSAPP",
-          name: name || '',
-          externalUserId: encryptedTo,
-        });
+      if (!groupResult.success) {
+        return responseHandler.getErrorResult(groupResult.message, res);
       }
-    } catch (e) {
-      console.error("Error ensuring whatsapp user exists:", e.message || e);
+
+      return responseHandler.Ok(groupResult.data, res);
     }
 
-    // Save outgoing message (store encrypted number)
-    await whatsAppRepository.saveOutgoingMessage({
-      to: encryptedTo,
-      type,
-      mediaUrl,
-      whatsappMediaId: mediaResponse?.id || null,
-      whatsappMessageId: sendResponse?.messages?.[0]?.id || null,
-      status: "SENT",
-      requestPayload: sanitizeOutgoingPayload(payload),
-      responsePayload: sanitizeOutgoingPayload(sendResponse),
-      fileName: req.file ? req.file.filename : null,
-      size: req.file ? req.file.size : null,
-    });
+    // ----- CASE 2: Direct Message -----
+    if (to) {
+      const decryptedTo = decrypt(to);
 
-    // Encrypt response for client
-    const encryptedResponse = encryptWhatsappResponseForClient(
-      sendResponse,
-      encryptedTo,
-    );
+      // Prepare WhatsApp payload
+      let payload;
+      if (type === "image") {
+        payload = {
+          messaging_product: "whatsapp",
+          to: decryptedTo,
+          type: "image",
+          image: link ? { link } : { id: mediaResponse?.id, ...(caption && { caption }) },
+          size: req.file ? req.file.size : null,
+        };
+      } else if (type === "document") {
+        payload = {
+          messaging_product: "whatsapp",
+          to: decryptedTo,
+          type: "document",
+          document: link
+            ? { link }
+            : { id: mediaResponse?.id, ...(caption && { caption }), ...(filename && { filename }) },
+          size: req.file ? req.file.size : null,
+        };
+      } else {
+        return responseHandler.getErrorResult(
+          "Unsupported media type. Must be 'image' or 'document'.",
+          res
+        );
+      }
 
-    responseHandler.Ok(encryptedResponse, res);
+      // Send WhatsApp message
+      const sendResponse = await whatsAppRepository.sendMessage(payload);
+
+      // Ensure WhatsApp user exists
+      try {
+        const existingUser = await whatsAppUserRepository.findByEncryptedPhone(to);
+        if (!existingUser) {
+          await whatsAppUserRepository.createUser({
+            encryptedPhone: to,
+            source: "WHATSAPP",
+            name: name || "",
+            externalUserId: to,
+          });
+        }
+      } catch (e) {
+        console.error("Error ensuring WhatsApp user exists:", e.message || e);
+      }
+
+      // Save outgoing message
+      await whatsAppRepository.saveOutgoingMessage({
+        to,
+        type,
+        mediaUrl,
+        whatsappMediaId: mediaResponse?.id || null,
+        whatsappMessageId: sendResponse?.messages?.[0]?.id || null,
+        status: "SENT",
+        requestPayload: sanitizeOutgoingPayload(payload),
+        responsePayload: sanitizeOutgoingPayload(sendResponse),
+        fileName: req.file ? req.file.filename : null,
+        size: req.file ? req.file.size : null,
+      });
+
+      // Encrypt response
+      const encryptedResponse = encryptWhatsappResponseForClient(sendResponse, to);
+      return responseHandler.Ok(encryptedResponse, res);
+    }
+
   } catch (err) {
     handleError(res, err);
   }
 };
+
 
 module.exports = {
   sendTextMessage,

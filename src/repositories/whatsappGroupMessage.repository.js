@@ -88,7 +88,7 @@ const  listGroupMessages = async (encryptedGroupId, page = 1, limit = 20) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .select("_id groupId senderId senderName groupName message");
+    .select("_id groupId senderId senderName groupName message mediaUrl messageType createdAt");
 
   const total = await GroupMessage.countDocuments({ groupId });
 

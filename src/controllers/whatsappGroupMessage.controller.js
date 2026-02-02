@@ -92,6 +92,9 @@ const getGroupMessages = async (req, res) => {
       senderName: msg.senderName,
       groupName: msg.groupName,
       message: msg.message,
+      mediaUrl: msg.mediaUrl,
+      messageType: msg.messageType,
+      createdAt: msg.createdAt,
     }));
 
     return responseHandler.Ok(
