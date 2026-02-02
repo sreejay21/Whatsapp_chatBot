@@ -60,6 +60,7 @@ const listAllGroups = async (req, res) => {
       name: member?.name,
       role: member?.role,
       source: member?.source,
+      encryptedPhone: member.userId.encryptedPhone || '',
       })),
       createdAt: group.createdAt,
     }));
