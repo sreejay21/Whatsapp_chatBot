@@ -54,16 +54,17 @@ const listAllGroups = async (req, res) => {
       groupId: encrypt(group._id.toString()),
       groupName: group?.name,
       logo: group?.logo,
-      membersCount: group?.members?.length,
+      membersCount: group?.members?.length || 0,
       members: group.members.map((member) => ({
-      userId: encrypt(member.userId.toString()),
-      name: member?.name,
-      role: member?.role,
-      source: member?.source,
-      encryptedPhone: member.userId.encryptedPhone || '',
+        userId: encrypt(member.userId._id.toString()), 
+        encryptedPhone: member.userId.encryptedPhone || '', 
+        name: member?.name || '',
+        role: member?.role || '',
+        source: member?.source || '',
       })),
       createdAt: group.createdAt,
     }));
+
 
     return responseHandler.Ok(
       {

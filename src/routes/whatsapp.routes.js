@@ -17,7 +17,21 @@ const router = express.Router();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/TextMessage'
+ *             oneOf:
+ *               - $ref: '#/components/schemas/DirectText'
+ *               - $ref: '#/components/schemas/GroupText'
+ *           examples:
+ *             directMessage:
+ *               summary: Direct one-to-one message
+ *               value:
+ *                 to: "encrypted_phone_number"
+ *                 message: "Hello, how are you?"
+ *             groupMessage:
+ *               summary: Group message payload
+ *               value:
+ *                 groupId: "encrypted_group_id"
+ *                 senderId: "encrypted_sender_id"
+ *                 message: "Hello team, standup at 10am"
  *     responses:
  *       200:
  *         description: Message sent successfully

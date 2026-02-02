@@ -7,16 +7,15 @@ const path = require("path");
 
 const sendGroupMessage = async ({
   encryptedGroupId,
-  encryptedSenderId,
+  encryptedSenderId, 
   message,
   messageType,
   mediaUrl = null,
 }) => {
   try {
     const groupId = decrypt(encryptedGroupId);
-    const senderId = decrypt(encryptedSenderId);
+    const senderId = decrypt(encryptedSenderId)
 
-    // Fetch group
     const group = await whatsappGroup
       .findById(groupId)
       .select("name members");
@@ -29,7 +28,6 @@ const sendGroupMessage = async ({
       };
     }
 
-    // Fetch sender
     const sender = await WhatsappUser
       .findById(senderId)
       .select("name");
@@ -42,7 +40,7 @@ const sendGroupMessage = async ({
       };
     }
 
-    // Check sender is a member
+
     const isMember = group.members.some(
       (m) => m.userId.toString() === senderId.toString()
     );
@@ -55,13 +53,12 @@ const sendGroupMessage = async ({
       };
     }
 
-    // Save message
     const groupMessage = await GroupMessage.create({
       groupId,
       senderId,
       senderName: sender.name,
       groupName: group.name,
-      message: message || null,
+      message: messageType === "text" ? message : null,
       messageType,
       mediaUrl,
     });
@@ -73,8 +70,6 @@ const sendGroupMessage = async ({
       data: groupMessage,
     };
   } catch (error) {
-    console.error("sendGroupMessage error:", error);
-
     return {
       success: false,
       statusCode: 500,
@@ -84,7 +79,8 @@ const sendGroupMessage = async ({
 };
 
 
-const listGroupMessages = async (encryptedGroupId, page = 1, limit = 20) => {
+
+const  listGroupMessages = async (encryptedGroupId, page = 1, limit = 20) => {
   const groupId = decrypt(encryptedGroupId);
   const skip = (page - 1) * limit;
 

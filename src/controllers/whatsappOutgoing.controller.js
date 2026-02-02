@@ -1,5 +1,6 @@
 const whatsAppRepository = require("../repositories/whatsappOutgoing.repository");
 const whatsAppUserRepository = require("../repositories/whatsappUser.repository");
+const { sendGroupMessage } = require("../repositories/whatsappGroupMessage.repository");
 const { encrypt, decrypt } = require("../config/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 const responseHandler = require("../utils/response.handler");
@@ -24,70 +25,94 @@ const handleError = (res, err) => {
   responseHandler.internalServerError(res, err.response?.data || err.message);
 };
 
-// --- Text message
 const sendTextMessage = async (req, res) => {
   try {
-    const { to: encryptedTo, message } = req.body;
-
-    if (!encryptedTo || !message) {
-      return responseHandler.badRequest(
-        "Recipient and message are required",
-        res,
-      );
-    }
-
-    // Decrypt phone number
-    const decryptedTo = decrypt(encryptedTo);
-
-    const payload = {
-      messaging_product: "whatsapp",
-      to: decryptedTo,
-      type: "text",
-      text: {
-        body: message,
-      },
-    };
-
-    const response = await whatsAppRepository.sendMessage(payload);
-    const name = req.body.name || '';
-
-    try {
-      const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
-        encryptedTo,
-      );
-      if (!existingUser) {
-        await whatsAppUserRepository.createUser({
-          encryptedPhone: encryptedTo,
-          source: "WHATSAPP",
-          name: name || '',
-          externalUserId: encryptedTo,
-        });
-      }
-    } catch (e) {
-      console.error("Error ensuring whatsapp user exists:", e.message || e);
-    }
-
-    // Save ONLY encrypted value
-    await whatsAppRepository.saveOutgoingMessage({
+    const {
       to: encryptedTo,
-      type: "text",
-      whatsappMessageId: response?.messages?.[0]?.id || null,
-      status: "SENT",
-      requestPayload: sanitizeOutgoingPayload(payload),
-      responsePayload: sanitizeOutgoingPayload(response),
-    });
+      message,
+      groupId: encryptedGroupId,
+      senderId: encryptedSenderId,
+    } = req.body;
 
-    // Encrypt response back to client
-    const encryptedResponse = encryptWhatsappResponseForClient(
-      response,
-      encryptedTo,
+    // Require message in both payloads
+    if (!message) {
+      return responseHandler.badRequest("Message is required", res);
+    }
+
+    // Branch: Group payload (groupId + senderId + message)
+    if (encryptedGroupId && encryptedSenderId) {
+      const groupResult = await sendGroupMessage({
+        encryptedGroupId,
+        encryptedSenderId,
+        message,
+        messageType: "text",
+      });
+
+      if (!groupResult.success) {
+        return responseHandler.getErrorResult(groupResult.message, res);
+      }
+
+      return responseHandler.Ok(groupResult.data, res);
+    }
+
+    // Branch: Direct payload (to + message)
+    if (encryptedTo) {
+      const decryptedTo = decrypt(encryptedTo);
+
+      const payload = {
+        messaging_product: "whatsapp",
+        to: decryptedTo,
+        type: "text",
+        text: {
+          body: message,
+        },
+      };
+
+      const response = await whatsAppRepository.sendMessage(payload);
+
+      const whatsappMessageId = response?.messages?.[0]?.id || null;
+
+      // Ensure whatsapp user exists (store encrypted phone only)
+      try {
+        const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
+          encryptedTo,
+        );
+        if (!existingUser) {
+          await whatsAppUserRepository.createUser({
+            encryptedPhone: encryptedTo,
+            source: "WHATSAPP",
+            name: req.body.name || "",
+            externalUserId: encryptedTo,
+          });
+        }
+      } catch (e) {
+        console.error("Error ensuring whatsapp user exists:", e.message || e);
+      }
+
+      await whatsAppRepository.saveOutgoingMessage({
+        to: encryptedTo,
+        type: "text",
+        whatsappMessageId,
+        status: "SENT",
+        requestPayload: sanitizeOutgoingPayload(payload),
+        responsePayload: sanitizeOutgoingPayload(response),
+      });
+
+      const encryptedResponse = encryptWhatsappResponseForClient(response, encryptedTo);
+
+      return responseHandler.Ok(encryptedResponse, res);
+    }
+
+    // If neither payload shape matched
+    return responseHandler.badRequest(
+      "Invalid payload. Provide either (to + message) for direct messages or (groupId + senderId + message) for group messages",
+      res,
     );
-
-    responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
     handleError(res, err);
   }
 };
+
 // --- Template message
 const sendTemplateMessage = async (req, res) => {
   try {
