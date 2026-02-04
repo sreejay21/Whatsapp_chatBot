@@ -40,38 +40,65 @@ const sendTextMessage = async (req, res) => {
     }
 
     // Group Message
-    if (encryptedGroupId) {
-      const senderId = req.user?.nameid;
 
-      if (!senderId) {
-        return responseHandler.unAuthorized("Unauthorized", res);
+      if (encryptedGroupId) {
+        const senderId = req.user?.nameid;
+         const encryptedPhonesRaw = String(req.body.to || "");
+
+        if (!senderId) {
+          return responseHandler.unAuthorized("Unauthorized", res);
+        }
+
+        const encryptedSenderId = encrypt(senderId);
+
+        // Save message ONCE
+        const groupResult = await sendGroupMessage({
+          encryptedGroupId,
+          encryptedSenderId,
+          message,
+          messageType: "text",
+        });
+
+        if (!groupResult.success) {
+          return responseHandler.getErrorResult(groupResult.message, res);
+        }
+
+        const phoneNumbers = encryptedPhonesRaw
+            .split(",")
+            .map(p => p.trim())
+            .filter(Boolean)
+            .map(p => decrypt(p.replace(/ /g, "+")));
+
+        await Promise.allSettled(
+          phoneNumbers.map(phone => {
+            const payload = {
+              messaging_product: "whatsapp",
+              to: phone,
+              type: "text",
+              text: {
+                body: message,
+              },
+            };
+
+            return whatsAppRepository.sendMessage(payload);
+          })
+        );
+
+
+        //  Response
+        return responseHandler.Ok(
+          {
+            id: encrypt(groupResult.data._id.toString()),
+            groupId: encrypt(groupResult.data.groupId.toString()),
+            senderId: encrypt(groupResult.data.senderId.toString()),
+            message: groupResult.data.message,
+            messageType: groupResult.data.messageType,
+            sentTo: phoneNumbers.length,    
+          },
+          res
+        );
       }
 
-      const encryptedSenderId = encrypt(senderId);
-
-      const groupResult = await sendGroupMessage({
-        encryptedGroupId,
-        encryptedSenderId,
-        message,
-        messageType: "text",
-      });
-      
-      const responseData = {
-        id: encrypt(groupResult.data._id.toString()),
-        groupId: encrypt(groupResult.data.groupId.toString()),
-        senderId: encrypt(groupResult.data.senderId.toString()),
-        message: groupResult.data.message,
-        senderName: groupResult.data.senderName,
-        groupName: groupResult.data.groupName,
-        messageType: groupResult.data.messageType,
-      }
-
-      if (!groupResult.success) {
-        return responseHandler.getErrorResult(groupResult.message, res);
-      }
-
-      return responseHandler.Ok(responseData, res);
-    }
 
    // Direct Message
     if (encryptedTo) {
@@ -267,17 +294,24 @@ const sendMediaController = async (req, res) => {
       : link || null;
 
     // ----- CASE 1: Group Message -----
-    if (groupId ) {
-      const senderId =encrypt(req.user.nameid);
-      if (!senderId) {
-        return responseHandler.unAuthorized("Unauthorized", res);
-      }
+  if (groupId) {
+  const senderId = req.user?.nameid;
+
+  if (!senderId) {
+    return responseHandler.unAuthorized("Unauthorized", res);
+  }
+
+  const encryptedSenderId = encrypt(senderId);
+  const encryptedToRaw = String(req.body.to || "");
+
+     
+      // Save group message 
       const groupResult = await sendGroupMessage({
         encryptedGroupId: groupId,
-        encryptedSenderId: senderId,
+        encryptedSenderId,
         message: caption || null,
         messageType: type,
-        mediaUrl: mediaUrl,
+        mediaUrl,
         fileName: req.file ? req.file.filename : null,
         size: req.file ? req.file.size : null,
       });
@@ -285,6 +319,37 @@ const sendMediaController = async (req, res) => {
       if (!groupResult.success) {
         return responseHandler.getErrorResult(groupResult.message, res);
       }
+
+      
+      const phoneNumbers = encryptedToRaw
+        .split(",")
+        .map(p => p.trim())
+        .filter(Boolean)
+        .map(p => decrypt(p.replace(/ /g, "+"))); 
+
+      
+      await Promise.allSettled(
+        phoneNumbers.map(phone => {
+          const payload = {
+            messaging_product: "whatsapp",
+            to: phone,
+            type,
+            ...(type === "text"
+              ? { text: { body: caption } }
+              : {
+                  [type]: {
+                    link: mediaUrl,
+                    caption: caption || undefined,
+                    filename: req.file?.filename,
+                  },
+                }),
+          };
+
+          return whatsAppRepository.sendMessage(payload);
+        })
+      );
+
+     
       const responseData = {
         id: encrypt(groupResult.data._id.toString()),
         groupId: encrypt(groupResult.data.groupId.toString()),
@@ -295,8 +360,10 @@ const sendMediaController = async (req, res) => {
         messageType: groupResult.data.messageType,
         fileName: groupResult.data.fileName,
         size: groupResult.data.size,
-        mediaUrl: mediaUrl,
+        mediaUrl,
+        sentTo: phoneNumbers.length,
       };
+
       return responseHandler.Ok(responseData, res);
     }
 
