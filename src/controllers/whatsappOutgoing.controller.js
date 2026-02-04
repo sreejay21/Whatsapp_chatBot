@@ -25,37 +25,55 @@ const handleError = (res, err) => {
   responseHandler.internalServerError(res, err.response?.data || err.message);
 };
 
+
+// --- Text Message Controller (Direct + Group)
 const sendTextMessage = async (req, res) => {
   try {
     const {
       to: encryptedTo,
       message,
       groupId: encryptedGroupId,
-      senderId: encryptedSenderId,
     } = req.body;
 
-    // Require message in both payloads
     if (!message) {
       return responseHandler.badRequest("Message is required", res);
     }
 
-    // Branch: Group payload (groupId + senderId + message)
-    if (encryptedGroupId && encryptedSenderId) {
+    // Group Message
+    if (encryptedGroupId) {
+      const senderId = req.user?.nameid;
+
+      if (!senderId) {
+        return responseHandler.unAuthorized("Unauthorized", res);
+      }
+
+      const encryptedSenderId = encrypt(senderId);
+
       const groupResult = await sendGroupMessage({
         encryptedGroupId,
         encryptedSenderId,
         message,
         messageType: "text",
       });
+      
+      const responseData = {
+        id: encrypt(groupResult.data._id.toString()),
+        groupId: encrypt(groupResult.data.groupId.toString()),
+        senderId: encrypt(groupResult.data.senderId.toString()),
+        message: groupResult.data.message,
+        senderName: groupResult.data.senderName,
+        groupName: groupResult.data.groupName,
+        messageType: groupResult.data.messageType,
+      }
 
       if (!groupResult.success) {
         return responseHandler.getErrorResult(groupResult.message, res);
       }
 
-      return responseHandler.Ok(groupResult.data, res);
+      return responseHandler.Ok(responseData, res);
     }
 
-    // Branch: Direct payload (to + message)
+   // Direct Message
     if (encryptedTo) {
       const decryptedTo = decrypt(encryptedTo);
 
@@ -69,14 +87,12 @@ const sendTextMessage = async (req, res) => {
       };
 
       const response = await whatsAppRepository.sendMessage(payload);
-
       const whatsappMessageId = response?.messages?.[0]?.id || null;
 
-      // Ensure whatsapp user exists (store encrypted phone only)
       try {
-        const existingUser = await whatsAppUserRepository.findByEncryptedPhone(
-          encryptedTo,
-        );
+        const existingUser =
+          await whatsAppUserRepository.findByEncryptedPhone(encryptedTo);
+
         if (!existingUser) {
           await whatsAppUserRepository.createUser({
             encryptedPhone: encryptedTo,
@@ -86,7 +102,10 @@ const sendTextMessage = async (req, res) => {
           });
         }
       } catch (e) {
-        console.error("Error ensuring whatsapp user exists:", e.message || e);
+        console.error(
+          "Error ensuring whatsapp user exists:",
+          e.message || e
+        );
       }
 
       await whatsAppRepository.saveOutgoingMessage({
@@ -98,15 +117,15 @@ const sendTextMessage = async (req, res) => {
         responsePayload: sanitizeOutgoingPayload(response),
       });
 
-      const encryptedResponse = encryptWhatsappResponseForClient(response, encryptedTo);
+      const encryptedResponse =
+        encryptWhatsappResponseForClient(response, encryptedTo);
 
       return responseHandler.Ok(encryptedResponse, res);
     }
 
-    // If neither payload shape matched
     return responseHandler.badRequest(
-      "Invalid payload. Provide either (to + message) for direct messages or (groupId + senderId + message) for group messages",
-      res,
+      "Invalid payload. Provide (groupId + message) for group messages or (to + message) for direct messages",
+      res
     );
   } catch (err) {
     handleError(res, err);
@@ -226,11 +245,11 @@ const sendwelcomeMessageTemplate = async (req, res) => {
 // --- Unified Media Controller (Image / Document, Upload or Link)
 const sendMediaController = async (req, res) => {
   try {
-    const { to, groupId, senderId, link, caption, filename, type, name } = req.body;
+    const { to, groupId, link, caption, filename, type, name } = req.body;
 
-    if (!type || (!to && !(groupId && senderId))) {
-      return responseHandler.getErrorResult(
-        "Invalid request: provide media type and either 'to' (direct) or 'groupId' + 'senderId' (group).",
+    if (!groupId && !to) {
+      return responseHandler.badRequest(
+        "Invalid request: provide either 'to' (direct) or 'groupId' (group)",
         res
       );
     }
@@ -248,20 +267,37 @@ const sendMediaController = async (req, res) => {
       : link || null;
 
     // ----- CASE 1: Group Message -----
-    if (groupId && senderId) {
+    if (groupId ) {
+      const senderId =encrypt(req.user.nameid);
+      if (!senderId) {
+        return responseHandler.unAuthorized("Unauthorized", res);
+      }
       const groupResult = await sendGroupMessage({
         encryptedGroupId: groupId,
         encryptedSenderId: senderId,
         message: caption || null,
         messageType: type,
         mediaUrl: mediaUrl,
+        fileName: req.file ? req.file.filename : null,
+        size: req.file ? req.file.size : null,
       });
 
       if (!groupResult.success) {
         return responseHandler.getErrorResult(groupResult.message, res);
       }
-
-      return responseHandler.Ok(groupResult.data, res);
+      const responseData = {
+        id: encrypt(groupResult.data._id.toString()),
+        groupId: encrypt(groupResult.data.groupId.toString()),
+        senderId: encrypt(groupResult.data.senderId.toString()),
+        message: groupResult.data.message,
+        senderName: groupResult.data.senderName,
+        groupName: groupResult.data.groupName,
+        messageType: groupResult.data.messageType,
+        fileName: groupResult.data.fileName,
+        size: groupResult.data.size,
+        mediaUrl: mediaUrl,
+      };
+      return responseHandler.Ok(responseData, res);
     }
 
     // ----- CASE 2: Direct Message -----

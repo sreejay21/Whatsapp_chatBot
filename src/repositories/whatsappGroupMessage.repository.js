@@ -11,6 +11,8 @@ const sendGroupMessage = async ({
   message,
   messageType,
   mediaUrl = null,
+  fileName = null,
+  size = null,
 }) => {
   try {
     const groupId = decrypt(encryptedGroupId);
@@ -61,6 +63,8 @@ const sendGroupMessage = async ({
       message: messageType === "text" ? message : null,
       messageType,
       mediaUrl,
+      fileName,
+      size,
     });
 
     return {
@@ -88,7 +92,7 @@ const  listGroupMessages = async (encryptedGroupId, page = 1, limit = 20) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .select("_id groupId senderId senderName groupName message mediaUrl messageType createdAt");
+    .select("_id groupId senderId senderName groupName message mediaUrl messageType fileName size createdAt ");
 
   const total = await GroupMessage.countDocuments({ groupId });
 

@@ -1,6 +1,7 @@
 const express = require("express");
 const whatsAppController = require("../controllers/whatsappOutgoing.controller");
 const upload = require("../middleware/multer");
+const authenticate = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -9,9 +10,15 @@ const router = express.Router();
  * /api/whatsapp/send-text:
  *   post:
  *     summary: Send a text message
- *     description: Send a text message to a WhatsApp user
+ *     description: |
+ *       Send a text message either to a WhatsApp user (direct message)
+ *       or to a WhatsApp group.
+ *
+ *       For group messages, the sender is identified from the Bearer token.
  *     tags:
  *       - Messages
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -27,10 +34,9 @@ const router = express.Router();
  *                 to: "encrypted_phone_number"
  *                 message: "Hello, how are you?"
  *             groupMessage:
- *               summary: Group message payload
+ *               summary: Group message
  *               value:
  *                 groupId: "encrypted_group_id"
- *                 senderId: "encrypted_sender_id"
  *                 message: "Hello team, standup at 10am"
  *     responses:
  *       200:
@@ -47,7 +53,13 @@ const router = express.Router();
  *                 message:
  *                   type: string
  *       400:
- *         description: Bad request - missing required fields
+ *         description: Bad request - missing or invalid fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - missing or invalid token
  *         content:
  *           application/json:
  *             schema:
@@ -59,7 +71,8 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/send-text", whatsAppController.sendTextMessage);
+router.post("/send-text", authenticate, whatsAppController.sendTextMessage);
+
 
 /**
  * @swagger
@@ -212,9 +225,15 @@ router.post("/send-media", whatsAppController.sendMediaController);
  * /api/whatsapp/send-media-upload:
  *   post:
  *     summary: Send media message via file upload
- *     description: Send image or document to a user or a group by uploading a file
+ *     description: |
+ *       Send an image or document to a WhatsApp user (direct message)
+ *       or to a WhatsApp group.
+ *
+ *       For group messages, the sender is identified from the Bearer token.
  *     tags:
  *       - Messages
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -227,21 +246,26 @@ router.post("/send-media", whatsAppController.sendMediaController);
  *               # Direct message
  *               to:
  *                 type: string
- *                 description: Encrypted recipient phone number (for direct messages)
+ *                 description: Encrypted recipient phone number (direct message)
+ *
  *               # Group message
  *               groupId:
  *                 type: string
- *                 description: Encrypted group ID (for group messages)
- *               senderId:
- *                 type: string
- *                 description: Encrypted sender ID (required for group messages)
+ *                 description: Encrypted group ID (group message)
+ *
  *               type:
  *                 type: string
  *                 enum: [image, document]
  *                 description: Type of media
+ *
  *               caption:
  *                 type: string
  *                 description: Optional caption for media
+ *
+ *               filename:
+ *                 type: string
+ *                 description: Optional filename for documents
+ *
  *               file:
  *                 type: string
  *                 format: binary
@@ -261,7 +285,13 @@ router.post("/send-media", whatsAppController.sendMediaController);
  *                 message:
  *                   type: string
  *       400:
- *         description: Bad request
+ *         description: Bad request - missing or invalid fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - missing or invalid token
  *         content:
  *           application/json:
  *             schema:
@@ -275,6 +305,7 @@ router.post("/send-media", whatsAppController.sendMediaController);
  */
 router.post(
   "/send-media-upload",
+  authenticate,
   upload.single("file"),
   whatsAppController.sendMediaController,
 );

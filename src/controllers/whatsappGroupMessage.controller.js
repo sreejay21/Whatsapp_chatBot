@@ -8,8 +8,9 @@ const responseHandler = require("../utils/response.handler");
 
 const sendMessageToGroup = async (req, res) => {
   try {
-    const { groupId, senderId, message } = req.body || {};
+    const { groupId,  message } = req.body || {};
     const file = req.file;
+    const senderId = encrypt(req.user.nameid);
 
     if (!groupId || !senderId) {
       return responseHandler.badRequest(
@@ -38,6 +39,8 @@ const sendMessageToGroup = async (req, res) => {
       messageType,
       message,
       mediaUrl,
+      fileName: file ? file.filename : null,
+      size: file ? file.size : null,
     };
 
     const result = await sendGroupMessage(payload);
@@ -95,6 +98,8 @@ const getGroupMessages = async (req, res) => {
       mediaUrl: msg.mediaUrl,
       messageType: msg.messageType,
       createdAt: msg.createdAt,
+      fileName: msg.fileName,
+      size: msg.size,
     }));
 
     return responseHandler.Ok(
