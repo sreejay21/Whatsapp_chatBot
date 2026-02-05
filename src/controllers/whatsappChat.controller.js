@@ -5,6 +5,7 @@ const { ApifyClient } = require("apify-client");
 const whatsappUserRepo = require("../repositories/whatsappUser.repository");
 const incomingRepo = require("../repositories/whatsappWebhook.repository");
 const groupRepo = require("../repositories/whatsappGroup.repository");
+const outgoingRepo = require("../repositories/whatsappOutgoing.repository");
 
 const apifyClient = new ApifyClient({
   token: process.env.APIFY_API_TOKEN,
@@ -83,10 +84,14 @@ const validateWhatsappNumber = async (req, res) => {
 const getWhatsappChatWindowStatus = async (req, res) => {
   try {
     const { encryptedPhone, groupId } = req.query;
-   
 
-    const isWithin24Hours = (date) =>
-      Date.now() - new Date(date).getTime() <= 24 * 60 * 60 * 1000;
+    const isWithin24Hours = (date) => {
+      if (!date) return false;
+      return (
+        Date.now() - new Date(date).getTime() <=
+        24 * 60 * 60 * 1000
+      );
+    };
 
     // ❗ Validation
     if (!encryptedPhone && !groupId) {
@@ -97,7 +102,9 @@ const getWhatsappChatWindowStatus = async (req, res) => {
     }
 
     /**
+     * =========================
      * DIRECT CHAT
+     * =========================
      */
     if (encryptedPhone && !groupId) {
       const waUser =
@@ -115,41 +122,60 @@ const getWhatsappChatWindowStatus = async (req, res) => {
           waUser.encryptedPhone
         );
 
-      if (!lastIncoming) {
-        return responseHandler.Ok(
-          {
-            window: "CLOSED",
-            reason: "No incoming user message"
-          },
-          res
+      const lastTemplate =
+        await outgoingRepo.findLastTemplateByPhone(
+          waUser.encryptedPhone
         );
+
+      let window = "CLOSED";
+      let openedAt = null;
+
+      // User reply (highest priority)
+      if (lastIncoming && isWithin24Hours(lastIncoming.createdAt)) {
+        window = "OPEN";
+        openedAt = lastIncoming.createdAt;
+      }
+      // Template override
+      else if (
+        lastTemplate &&
+        isWithin24Hours(lastTemplate.createdAt)
+      ) {
+        window = "OPEN";
+        openedAt = lastTemplate.createdAt;
       }
 
       return responseHandler.Ok(
         {
-          window: isWithin24Hours(lastIncoming.createdAt)
-            ? "OPEN"
-            : "CLOSED",
-          lastUserMessageAt: lastIncoming.createdAt
+          encryptedPhone,
+          window,
+          openedAt,
+          lastUserMessageAt: lastIncoming?.createdAt || null
         },
         res
       );
     }
 
     /**
+     * =========================
      * GROUP CHAT
+     * =========================
      */
     if (groupId) {
       const decryptedGroupId = decrypt(groupId);
+
       const group = await groupRepo.findById(decryptedGroupId);
 
       if (!group) {
-        return responseHandler.notFound(res, "Group not found");
+        return responseHandler.notFound(
+          res,
+          "Group not found"
+        );
       }
 
+      // Only WhatsApp members
       const memberUserIds = group.members
-        .filter(m => m.source === "WHATSAPP")
-        .map(m => m.userId);
+        .filter((m) => m.source === "WHATSAPP")
+        .map((m) => m.userId);
 
       const waUsers =
         await whatsappUserRepo.findByUserIds(memberUserIds);
@@ -162,25 +188,32 @@ const getWhatsappChatWindowStatus = async (req, res) => {
             user.encryptedPhone
           );
 
-        if (!lastIncoming) {
-          result.push({
-            userId: user.userId,
-            encryptedPhone: user.encryptedPhone,
-            name: user.name,
-            window: "CLOSED",
-            reason: "No incoming message from user"
-          });
-          continue;
+        const lastTemplate =
+          await outgoingRepo.findLastTemplateByPhone(
+            user.encryptedPhone
+          );
+
+        let window = "CLOSED";
+        let openedAt = null;
+
+        if (lastIncoming && isWithin24Hours(lastIncoming.createdAt)) {
+          window = "OPEN";
+          openedAt = lastIncoming.createdAt;
+        } else if (
+          lastTemplate &&
+          isWithin24Hours(lastTemplate.createdAt)
+        ) {
+          window = "OPEN";
+          openedAt = lastTemplate.createdAt;
         }
 
         result.push({
           userId: user.userId,
           name: user.name,
           encryptedPhone: user.encryptedPhone,
-          window: isWithin24Hours(lastIncoming.createdAt)
-            ? "OPEN"
-            : "CLOSED",
-          lastUserMessageAt: lastIncoming.createdAt
+          window,
+          openedAt,
+          lastUserMessageAt: lastIncoming?.createdAt || null
         });
       }
 

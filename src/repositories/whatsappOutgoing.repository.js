@@ -135,6 +135,12 @@ const uploadDocument = async (filePath, mimeType) => {
   return response.data;
 };
 
+const findLastTemplateByPhone = async (encryptedPhone) => {
+  return await WhatsappOutgoingMessage.findOne({ to: encryptedPhone, type: "template" })
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
 module.exports = {
   createMessagePayload,
   sendMessage,
@@ -143,4 +149,5 @@ module.exports = {
   sendImageMessage,
   sendDocumentMessage,
   uploadDocument,
+  findLastTemplateByPhone
 };
