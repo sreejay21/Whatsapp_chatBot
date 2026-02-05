@@ -52,8 +52,17 @@ const updateMessageStatus = async (messageId, status, statusData) => {
   return await message.save();
 };
 
+
+const findLastIncomingByPhone = async (encryptedPhone) => {
+  return await WhatsappIncomingMessage.findOne({ from: encryptedPhone })
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
+
 module.exports = {
   sendMessage,
   saveIncomingMessage,
   updateMessageStatus,
+  findLastIncomingByPhone
 };

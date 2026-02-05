@@ -36,9 +36,19 @@ const listUsers = async ({ page = 1, limit = 20 } = {}) => {
   };
 };
 
+const findByUserId = async (encryptedPhone) => {
+  return await WhatsappUser.findOne({ encryptedPhone });
+}
+
+const findByUserIds = async (userIds) => {
+  return await WhatsappUser.find({ _id : { $in: userIds } });
+};
+
 module.exports = {
   findByEncryptedPhone,
   createUser,
   updateUserName,
   listUsers,
+  findByUserId,
+  findByUserIds
 };

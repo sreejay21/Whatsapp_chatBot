@@ -89,4 +89,8 @@ const listAllGroups = async ({ page, limit }) => {
   };
 };
 
-module.exports = { createGroup, listAllGroups };
+const findById = async (decryptedGroupId) => {
+  return await whatsappGroup.findById(decryptedGroupId);
+}
+
+module.exports = { createGroup, listAllGroups, findById };
