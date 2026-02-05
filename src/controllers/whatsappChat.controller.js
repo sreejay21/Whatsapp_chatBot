@@ -165,6 +165,7 @@ const getWhatsappChatWindowStatus = async (req, res) => {
         if (!lastIncoming) {
           result.push({
             userId: user.userId,
+            encryptedPhone: user.encryptedPhone,
             name: user.name,
             window: "CLOSED",
             reason: "No incoming message from user"
@@ -175,6 +176,7 @@ const getWhatsappChatWindowStatus = async (req, res) => {
         result.push({
           userId: user.userId,
           name: user.name,
+          encryptedPhone: user.encryptedPhone,
           window: isWithin24Hours(lastIncoming.createdAt)
             ? "OPEN"
             : "CLOSED",
