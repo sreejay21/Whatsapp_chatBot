@@ -4,6 +4,7 @@ const { sendGroupMessage } = require("../repositories/whatsappGroupMessage.repos
 const { encrypt, decrypt } = require("../config/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 const responseHandler = require("../utils/response.handler");
+const { renderTemplateMessage } = require("../utils/templateRenderer");
 const fs = require("fs");
 
 // --- Helper: encrypt WhatsApp response for client
@@ -181,6 +182,12 @@ const sendTemplateMessage = async (req, res) => {
 
     const response = await whatsAppRepository.sendMessage(payload);
 
+    const renderedText =
+      payload?.template
+        ? renderTemplateMessage(payload.template)
+        : null;
+
+
     await whatsAppRepository.saveOutgoingMessage({
       to: encryptedTo,
       type: "template",
@@ -188,6 +195,7 @@ const sendTemplateMessage = async (req, res) => {
       status: "SENT",
       requestPayload: sanitizeOutgoingPayload(payload),
       responsePayload: sanitizeOutgoingPayload(response),
+      text: renderedText,
     });
 
     const encryptedResponse = encryptWhatsappResponseForClient(
@@ -232,9 +240,14 @@ const sendwelcomeMessageTemplate = async (req, res) => {
       },
     };
 
+    const templateForRender = JSON.parse(
+      JSON.stringify(payload.template)
+    );
+
+    const renderedText = renderTemplateMessage(templateForRender);
+
     const response = await whatsAppRepository.sendMessage(payload);
 
-    // Save / create user
     try {
       const existingUser =
         await whatsAppUserRepository.findByEncryptedPhone(encryptedTo);
@@ -248,7 +261,10 @@ const sendwelcomeMessageTemplate = async (req, res) => {
         });
       }
     } catch (e) {
-      console.error("Error ensuring whatsapp user exists:", e.message || e);
+      console.error(
+        "Error ensuring WhatsApp user exists:",
+        e.message || e
+      );
     }
 
     await whatsAppRepository.saveOutgoingMessage({
@@ -256,6 +272,7 @@ const sendwelcomeMessageTemplate = async (req, res) => {
       type: "template",
       whatsappMessageId: response?.messages?.[0]?.id || null,
       status: "SENT",
+      text: renderedText,
       requestPayload: sanitizeOutgoingPayload(payload),
       responsePayload: sanitizeOutgoingPayload(response),
     });
@@ -263,11 +280,12 @@ const sendwelcomeMessageTemplate = async (req, res) => {
     const encryptedResponse =
       encryptWhatsappResponseForClient(response, encryptedTo);
 
-    responseHandler.Ok(encryptedResponse, res);
+    return responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
     handleError(res, err);
   }
 };
+
 
 // --- Unified Media Controller (Image / Document, Upload or Link)
 const sendMediaController = async (req, res) => {
