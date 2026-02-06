@@ -277,8 +277,13 @@ const sendwelcomeMessageTemplate = async (req, res) => {
       responsePayload: sanitizeOutgoingPayload(response),
     });
 
+    const responseData = {
+      ...response,
+      renderedText,
+    };
+
     const encryptedResponse =
-      encryptWhatsappResponseForClient(response, encryptedTo);
+      encryptWhatsappResponseForClient(responseData, encryptedTo);
 
     return responseHandler.Ok(encryptedResponse, res);
   } catch (err) {
