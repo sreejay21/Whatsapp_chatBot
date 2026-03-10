@@ -1,4 +1,4 @@
-const {encrypt} = require("../config/crypto.util");
+const {encrypt} = require("../crypto/crypto.util");
 
 const sanitizeWhatsAppPayload = (payload) => {
   if (!payload) return payload;

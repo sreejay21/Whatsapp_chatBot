@@ -1,6 +1,6 @@
 const groupRepo = require("../repositories/whatsappGroup.repository");
 const responseHandler = require("../utils/response.handler");
-const { encrypt } = require("../config/crypto.util");
+const { encrypt } = require("../crypto/crypto.util");
 
 const createGroup = async (req, res) => {
   try {

@@ -1,7 +1,7 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const app = require("./app");
-const setupSwagger = require("./src/config/swagger.middleware"); // Swagger middleware
+const setupSwagger = require("./src/swagger/swagger.middleware"); // Swagger middleware
 
 const PORT = process.env.PORT || 5000;
 

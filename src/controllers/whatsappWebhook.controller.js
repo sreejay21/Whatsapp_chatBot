@@ -1,5 +1,5 @@
 const whatsAppRepo = require("../repositories/whatsappWebhook.repository");
-const { encrypt, decrypt } = require("../config/crypto.util");
+const { encrypt, decrypt } = require("../crypto/crypto.util");
 const { sanitizeWhatsAppPayload } = require("../config/whatsappPayload.util");
 const { saveWhatsappUser } = require("../controllers/whatsappUser.controller");
 const responseHandler = require("../utils/response.handler");
@@ -154,70 +154,5 @@ const replyMessage = async (to, body, messageId) => {
   return await whatsAppRepo.sendMessage(payload);
 };
 
-const sendList = async (to) => {
-  const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "interactive",
-    interactive: {
-      type: "list",
-      header: { type: "text", text: "Message Header" },
-      body: { text: "This is a interactive list message" },
-      footer: { text: "This is the message footer" },
-      action: {
-        button: "Tap for the options",
-        sections: [
-          {
-            title: "First Section",
-            rows: [
-              {
-                id: "first_option",
-                title: "First option",
-                description: "This is the description of the first option",
-              },
-              {
-                id: "second_option",
-                title: "Second option",
-                description: "This is the description of the second option",
-              },
-            ],
-          },
-          {
-            title: "Second Section",
-            rows: [{ id: "third_option", title: "Third option" }],
-          },
-        ],
-      },
-    },
-  };
-  return await whatsAppRepo.sendMessage(payload);
-};
-
-const sendReplyButtons = async (to) => {
-  const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "interactive",
-    interactive: {
-      type: "button",
-      header: { type: "text", text: "Message Header" },
-      body: { text: "This is a interactive reply buttons message" },
-      footer: { text: "This is the message footer" },
-      action: {
-        buttons: [
-          {
-            type: "reply",
-            reply: { id: "first_button", title: "First Button" },
-          },
-          {
-            type: "reply",
-            reply: { id: "second_button", title: "Second Button" },
-          },
-        ],
-      },
-    },
-  };
-  return await whatsAppRepo.sendMessage(payload);
-};
 
 module.exports = { verifyWebhook, handleWebhook };

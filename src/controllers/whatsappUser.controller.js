@@ -1,5 +1,5 @@
 const whatsappUserRepo = require("../repositories/whatsappUser.repository");
-const { encrypt, decrypt } = require("../config/crypto.util");
+const { encrypt, decrypt } = require("../crypto/crypto.util");
 const responseHandler = require("../utils/response.handler");
 
 // Save or update WhatsApp user

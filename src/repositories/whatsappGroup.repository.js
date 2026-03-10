@@ -1,6 +1,6 @@
 const whatsappGroup = require("../models/whatsappGroup.model");
 const WhatsappUser = require("../models/whatsappUser.model");
-const { decrypt } = require("../config/crypto.util");
+const { decrypt } = require("../crypto/crypto.util");
 
 const createGroup = async ({ name, members, createdBy, logo }) => {
   const creatorId = decrypt(createdBy);

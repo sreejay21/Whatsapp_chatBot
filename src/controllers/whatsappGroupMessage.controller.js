@@ -3,7 +3,7 @@ const {
   listGroupMessages,
   saveGroupMedia,
 } = require("../repositories/whatsappGroupMessage.repository");
-const { encrypt } = require("../config/crypto.util");
+const { encrypt } = require("../crypto/crypto.util");
 const responseHandler = require("../utils/response.handler");
 
 const sendMessageToGroup = async (req, res) => {

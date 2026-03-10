@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 
-const corsMiddleware = require("./src/config/cors");
+const corsMiddleware = require("./src/cors/cors");
 
 const whatsappRoutes = require("./src/routes/whatsapp.routes");
 const whatsappWebhookRoutes = require("./src/routes/whatsappWebhook.route");

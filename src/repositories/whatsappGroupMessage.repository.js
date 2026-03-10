@@ -1,7 +1,7 @@
 const whatsappGroup = require("../models/whatsappGroup.model");
 const GroupMessage = require("../models/whatsappGroupMessage.model");
 const WhatsappUser = require("../models/whatsappUser.model");
-const { decrypt } = require("../config/crypto.util");
+const { decrypt } = require("../crypto/crypto.util");
 const fs = require("fs");
 const path = require("path");
 

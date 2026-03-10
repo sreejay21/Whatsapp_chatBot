@@ -1,7 +1,7 @@
 const whatsAppRepository = require("../repositories/whatsappOutgoing.repository");
 const whatsAppUserRepository = require("../repositories/whatsappUser.repository");
 const { sendGroupMessage } = require("../repositories/whatsappGroupMessage.repository");
-const { encrypt, decrypt } = require("../config/crypto.util");
+const { encrypt, decrypt } = require("../crypto/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 const responseHandler = require("../utils/response.handler");
 const { renderTemplateMessage } = require("../utils/templateRenderer");

@@ -1,5 +1,5 @@
 const whatsappChatRepo = require("../repositories/whatsappChat.repository");
-const { decrypt, encrypt } = require("../config/crypto.util");
+const { decrypt, encrypt } = require("../crypto/crypto.util");
 const responseHandler = require("../utils/response.handler");
 const { ApifyClient } = require("apify-client");
 const whatsappUserRepo = require("../repositories/whatsappUser.repository");
