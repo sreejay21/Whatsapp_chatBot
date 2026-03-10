@@ -4,6 +4,7 @@ const { sanitizeWhatsAppPayload } = require("../config/whatsappPayload.util");
 const { saveWhatsappUser } = require("../controllers/whatsappUser.controller");
 const responseHandler = require("../utils/response.handler");
 const whatsappMediaRepo = require("../repositories/whatsappMedia.respository");
+const {handleTextMessage, handleInteractiveMessage} = require("../utils/common")
 
 // Webhook verification
 const verifyWebhook = (req, res) => {
@@ -93,66 +94,8 @@ const handleWebhook = async (req, res) => {
   }
 };
 
-// ===== Dynamic Text Message Handler =====
-const handleTextMessage = async (messages) => {
-  const text = messages.text.body.trim().toLowerCase();
-  const from = messages.from;
-  const messageId = messages.id;
 
-  let reply = null;
 
-  // Handle greetings
-  if (/(^|\s)(hi|hii|hello|hey)(\s|$)/i.test(text)) {
-    reply = "Hi How can We help You?";
-  }
-
-  // Send reply only if matched
-  if (reply) {
-    await replyMessage(from, reply, messageId);
-  }
-};
-
-// ===== Interactive Message Handler =====
-const handleInteractiveMessage = async (messages) => {
-  const from = messages.from;
-  const interactive = messages.interactive;
-
-  if (interactive.type === "list_reply") {
-    await sendMessage(
-      from,
-      `You selected the option with ID ${interactive.list_reply.id} - Title ${interactive.list_reply.title}`,
-    );
-  }
-
-  if (interactive.type === "button_reply") {
-    await sendMessage(
-      from,
-      `You selected the button with ID ${interactive.button_reply.id} - Title ${interactive.button_reply.title}`,
-    );
-  }
-};
-
-// ===== Helper functions using repo =====
-const sendMessage = async (to, body) => {
-  const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "text",
-    text: { body },
-  };
-  return await whatsAppRepo.sendMessage(payload);
-};
-
-const replyMessage = async (to, body, messageId) => {
-  const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "text",
-    text: { body },
-    context: { message_id: messageId },
-  };
-  return await whatsAppRepo.sendMessage(payload);
-};
 
 
 module.exports = { verifyWebhook, handleWebhook };
