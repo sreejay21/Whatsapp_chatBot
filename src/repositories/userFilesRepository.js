@@ -8,7 +8,6 @@ const createUserFile = async ({
   size,
   blobName,
   providerFileId = null,
-  extractedText
 }) => {
 
   const file = await UserFiles.create({
@@ -23,8 +22,7 @@ const createUserFile = async ({
     source: "WHATSAPP",
     uploadedAt: new Date(),
     isProcessed: 0,
-    isDeleted: false,
-    extractedText
+    isDeleted: false
   });
 
   return file;

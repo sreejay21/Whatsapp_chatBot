@@ -7,7 +7,6 @@ const responseHandler = require("../utils/response.handler");
 const { renderTemplateMessage } = require("../utils/templateRenderer");
 const {buildPayload,encryptWhatsappResponseForClient,parsePhoneNumbers,handleError}= require("../utils/helper")
 const userFilesRepository = require("../repositories/userFilesRepository")
-const extractTextFromFile = require("../utils/fileExtraction")
 
 
 // --- Text Message Controller (Direct + Group)
@@ -291,18 +290,13 @@ const sendMediaController = async (req, res) => {
 
     // ---------- FILE UPLOAD ----------
     if (req.file) {
-      const extractedText = await extractTextFromFile(
-        req.file.path,
-        req.file.mimetype
-      );
 
       userFileDoc = await userFilesRepository.createUserFile({
         userId: senderId,
         name: req.file.originalname,
         contentType: req.file.mimetype,
         size: req.file.size,
-        blobName: `uploads/${req.file.filename}`,
-        extractedText: extractedText || null
+        blobName: `uploads/${req.file.filename}`
       });
 
       const uploadFn =
