@@ -5,26 +5,9 @@ const { encrypt, decrypt } = require("../crypto/crypto.util");
 const { sanitizeOutgoingPayload } = require("../config/whatsappPayload.util");
 const responseHandler = require("../utils/response.handler");
 const { renderTemplateMessage } = require("../utils/templateRenderer");
-const fs = require("fs");
-
-// --- Helper: encrypt WhatsApp response for client
-const encryptWhatsappResponseForClient = (response, encryptedTo) => {
-  if (!response?.contacts?.length) return response;
-
-  return {
-    ...response,
-    contacts: response.contacts.map(() => ({
-      input: encryptedTo,
-      wa_id: encryptedTo,
-    })),
-  };
-};
-
-// --- Helper: consistent error handling
-const handleError = (res, err) => {
-  console.error(err.response?.data || err.message);
-  responseHandler.internalServerError(res, err.response?.data || err.message);
-};
+const {buildPayload,encryptWhatsappResponseForClient,parsePhoneNumbers,handleError}= require("../utils/helper")
+const userFilesRepository = require("../repositories/userFilesRepository")
+const extractTextFromFile = require("../utils/fileExtraction")
 
 
 // --- Text Message Controller (Direct + Group)
@@ -292,172 +275,142 @@ const sendwelcomeMessageTemplate = async (req, res) => {
 };
 
 
-// --- Unified Media Controller (Image / Document, Upload or Link)
 const sendMediaController = async (req, res) => {
   try {
     const { to, groupId, link, caption, filename, type, name } = req.body;
 
     if (!groupId && !to) {
-      return responseHandler.badRequest(
-        "Invalid request: provide either 'to' (direct) or 'groupId' (group)",
-        res
-      );
+      return responseHandler.badRequest("Provide either 'to' or 'groupId'", res);
     }
 
+    let mediaUrl = link || null;
     let mediaResponse = null;
+    let userFileDoc = null;
+
+    const senderId = req.user?.nameid;
+
+    // ---------- FILE UPLOAD ----------
     if (req.file) {
-      mediaResponse =
+      const extractedText = await extractTextFromFile(
+        req.file.path,
+        req.file.mimetype
+      );
+
+      userFileDoc = await userFilesRepository.createUserFile({
+        userId: senderId,
+        name: req.file.originalname,
+        contentType: req.file.mimetype,
+        size: req.file.size,
+        blobName: `uploads/${req.file.filename}`,
+        extractedText: extractedText || null
+      });
+
+      const uploadFn =
         type === "image"
-          ? await whatsAppRepository.uploadImage(req.file.path, req.file.mimetype)
-          : await whatsAppRepository.uploadDocument(req.file.path, req.file.mimetype);
+          ? whatsAppRepository.uploadImage
+          : whatsAppRepository.uploadDocument;
+
+      mediaResponse = await uploadFn(req.file.path, req.file.mimetype);
+
+      mediaUrl = `${process.env.BASE_URL}/uploads/${req.file.filename}`;
     }
 
-    const mediaUrl = req.file
-      ? `${process.env.BASE_URL}/uploads/${req.file.filename}`
-      : link || null;
+    // ---------- GROUP MESSAGE ----------
+    if (groupId) {
+      if (!senderId) {
+        return responseHandler.unAuthorized("Unauthorized", res);
+      }
 
-    // ----- CASE 1: Group Message -----
-  if (groupId) {
-  const senderId = req.user?.nameid;
+      const encryptedSenderId = encrypt(senderId);
 
-  if (!senderId) {
-    return responseHandler.unAuthorized("Unauthorized", res);
-  }
-
-  const encryptedSenderId = encrypt(senderId);
-  const encryptedToRaw = String(req.body.to || "");
-
-     
-      // Save group message 
       const groupResult = await sendGroupMessage({
         encryptedGroupId: groupId,
         encryptedSenderId,
         message: caption || null,
         messageType: type,
         mediaUrl,
-        fileName: req.file ? req.file.filename : null,
-        size: req.file ? req.file.size : null,
+        fileName: req.file?.filename || null,
+        size: req.file?.size || null,
       });
 
       if (!groupResult.success) {
         return responseHandler.getErrorResult(groupResult.message, res);
       }
 
-      
-      const phoneNumbers = encryptedToRaw
-        .split(",")
-        .map(p => p.trim())
-        .filter(Boolean)
-        .map(p => decrypt(p.replace(/ /g, "+"))); 
+      const phoneNumbers = parsePhoneNumbers(req.body.to);
 
-      
       await Promise.allSettled(
-        phoneNumbers.map(phone => {
-          const payload = {
-            messaging_product: "whatsapp",
-            to: phone,
-            type,
-            ...(type === "text"
-              ? { text: { body: caption } }
-              : {
-                  [type]: {
-                    link: mediaUrl,
-                    caption: caption || undefined,
-                    filename: req.file?.filename,
-                  },
-                }),
-          };
-
-          return whatsAppRepository.sendMessage(payload);
-        })
+        phoneNumbers.map((phone) =>
+          whatsAppRepository.sendMessage(
+            buildPayload({ to: phone, type, caption, mediaUrl })
+          )
+        )
       );
 
-     
-      const responseData = {
-        id: encrypt(groupResult.data._id.toString()),
-        groupId: encrypt(groupResult.data.groupId.toString()),
-        senderId: encrypt(groupResult.data.senderId.toString()),
-        message: groupResult.data.message,
-        senderName: groupResult.data.senderName,
-        groupName: groupResult.data.groupName,
-        messageType: groupResult.data.messageType,
-        fileName: groupResult.data.fileName,
-        size: groupResult.data.size,
-        mediaUrl,
-        sentTo: phoneNumbers.length,
-      };
-
-      return responseHandler.Ok(responseData, res);
+      return responseHandler.Ok(
+        {
+          id: encrypt(groupResult.data._id.toString()),
+          groupId: encrypt(groupResult.data.groupId.toString()),
+          senderId: encrypt(groupResult.data.senderId.toString()),
+          message: groupResult.data.message,
+          senderName: groupResult.data.senderName,
+          groupName: groupResult.data.groupName,
+          messageType: groupResult.data.messageType,
+          mediaUrl,
+          sentTo: phoneNumbers.length,
+        },
+        res
+      );
     }
 
-    // ----- CASE 2: Direct Message -----
+    // ---------- DIRECT MESSAGE ----------
     if (to) {
       const decryptedTo = decrypt(to);
 
-      // Prepare WhatsApp payload
-      let payload;
-      if (type === "image") {
-        payload = {
-          messaging_product: "whatsapp",
-          to: decryptedTo,
-          type: "image",
-          image: link ? { link } : { id: mediaResponse?.id, ...(caption && { caption }) },
-          size: req.file ? req.file.size : null,
-        };
-      } else if (type === "document") {
-        payload = {
-          messaging_product: "whatsapp",
-          to: decryptedTo,
-          type: "document",
-          document: link
-            ? { link }
-            : { id: mediaResponse?.id, ...(caption && { caption }), ...(filename && { filename }) },
-          size: req.file ? req.file.size : null,
-        };
-      } else {
-        return responseHandler.getErrorResult(
-          "Unsupported media type. Must be 'image' or 'document'.",
-          res
-        );
-      }
+      const payload = buildPayload({
+        to: decryptedTo,
+        type,
+        caption,
+        mediaUrl,
+        mediaId: mediaResponse?.id,
+        filename,
+      });
 
-      // Send WhatsApp message
       const sendResponse = await whatsAppRepository.sendMessage(payload);
 
-      // Ensure WhatsApp user exists
-      try {
-        const existingUser = await whatsAppUserRepository.findByEncryptedPhone(to);
-        if (!existingUser) {
-          await whatsAppUserRepository.createUser({
-            encryptedPhone: to,
-            source: "WHATSAPP",
-            name: name || "",
-            externalUserId: to,
-          });
-        }
-      } catch (e) {
-        console.error("Error ensuring WhatsApp user exists:", e.message || e);
+      const existingUser =
+        await whatsAppUserRepository.findByEncryptedPhone(to);
+
+      if (!existingUser) {
+        await whatsAppUserRepository.createUser({
+          encryptedPhone: to,
+          source: "WHATSAPP",
+          name: name || "",
+          externalUserId: to,
+        });
       }
 
-      // Save outgoing message
       await whatsAppRepository.saveOutgoingMessage({
         to,
         type,
         mediaUrl,
+        userFileId: userFileDoc?._id || null,
         whatsappMediaId: mediaResponse?.id || null,
         whatsappMessageId: sendResponse?.messages?.[0]?.id || null,
         status: "SENT",
         requestPayload: sanitizeOutgoingPayload(payload),
         responsePayload: sanitizeOutgoingPayload(sendResponse),
-        fileName: req.file ? req.file.filename : null,
-        size: req.file ? req.file.size : null,
+        fileName: req.file?.filename || null,
+        size: req.file?.size || null,
       });
 
-      // Encrypt response
-      const encryptedResponse = encryptWhatsappResponseForClient(sendResponse, to);
+      const encryptedResponse = encryptWhatsappResponseForClient(
+        sendResponse,
+        to
+      );
+
       return responseHandler.Ok(encryptedResponse, res);
     }
-
   } catch (err) {
     handleError(res, err);
   }

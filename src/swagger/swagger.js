@@ -16,7 +16,7 @@ const options = {
     // ✅ Server controlled by ENV (localhost by default)
     servers: [
       {
-        url: "https://ritrowaapidev.azurewebsites.net",
+        url: "http://localhost:3000",
         description: "Active API server",
       },
     ],
@@ -150,6 +150,7 @@ const options = {
         },
 
         MediaMessage: {
+          description: "Legacy media message schema. Prefer `DirectMedia` or `GroupMedia` for clarity.",
           type: "object",
           required: ["to", "media_url", "media_type"],
           properties: {
@@ -170,6 +171,79 @@ const options = {
             caption: {
               type: "string",
               description: "Optional caption for media",
+            },
+          },
+        },
+
+        DirectMedia: {
+          type: "object",
+          required: ["to", "link", "type"],
+          properties: {
+            to: {
+              type: "string",
+              description: "Encrypted recipient phone number for one-to-one messages",
+              example: "encrypted_phone_number",
+            },
+            link: {
+              type: "string",
+              description: "URL of the media to send",
+              format: "uri",
+              example: "https://example.com/image.jpg",
+            },
+            type: {
+              type: "string",
+              enum: ["image", "document"],
+              description: "Type of media",
+              example: "image",
+            },
+            caption: {
+              type: "string",
+              description: "Optional caption for media",
+              example: "Check this out!",
+            },
+            filename: {
+              type: "string",
+              description: "Optional filename for document",
+              example: "document.pdf",
+            },
+          },
+        },
+
+        GroupMedia: {
+          type: "object",
+          required: ["groupId", "senderId", "link", "type"],
+          properties: {
+            groupId: {
+              type: "string",
+              description: "Encrypted group identifier",
+              example: "encrypted_group_id",
+            },
+            senderId: {
+              type: "string",
+              description: "Encrypted sender user id",
+              example: "encrypted_sender_id",
+            },
+            link: {
+              type: "string",
+              description: "URL of the media to send to group",
+              format: "uri",
+              example: "https://example.com/image.jpg",
+            },
+            type: {
+              type: "string",
+              enum: ["image", "document"],
+              description: "Type of media",
+              example: "image",
+            },
+            caption: {
+              type: "string",
+              description: "Optional caption for media",
+              example: "Team photo",
+            },
+            filename: {
+              type: "string",
+              description: "Optional filename for document",
+              example: "report.pdf",
             },
           },
         },
