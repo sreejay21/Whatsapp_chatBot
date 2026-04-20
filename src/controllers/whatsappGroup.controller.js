@@ -1,32 +1,63 @@
 const groupRepo = require("../repositories/whatsappGroup.repository");
 const responseHandler = require("../utils/response.handler");
 const { encrypt } = require("../crypto/crypto.util");
+const  { parseMembers } = require("../common/common");
+
+
+
 
 const createGroup = async (req, res) => {
   try {
     const { name } = req.body;
-    let { members } = req.body;
     const logoFile = req.file;
 
+    let members;
+
     try {
-      members = JSON.parse(members);
-      if (!Array.isArray(members)) {
-        throw new Error("Members must be an array");
-      }
+      members = parseMembers(req.body.members);
     } catch (err) {
-      return responseHandler.badRequest(res, "Members must be valid JSON array");
+      return responseHandler.badRequest(res, err.message);
     }
+
+    if (!Array.isArray(members) || members.length === 0) {
+      return responseHandler.badRequest(res, "At least one member is required");
+    }
+
+    const allowedSources = ["WHATSAPP", "TELEGRAM", "SLACK"];
+
+    members = members.map((m, index) => {
+      if (!m.userId && !m.externalUserId) {
+        throw new Error(`members[${index}].userId is required`);
+      }
+
+      if (!m.name) {
+        throw new Error(`members[${index}].name is required`);
+      }
+
+      const source = String(m.source || "").toUpperCase();
+
+      if (!allowedSources.includes(source)) {
+        throw new Error(
+          `members[${index}].source must be WHATSAPP, TELEGRAM, or SLACK`
+        );
+      }
+
+      return {
+        ...m,
+        source,
+        externalUserId: m.externalUserId || m.userId,
+      };
+    });
 
     const encryptedCreatorId = encrypt(req.user.nameid);
 
-    let logoUrl = null;
-    if (logoFile) {
-      logoUrl = `${process.env.BASE_URL}/uploads/${logoFile.filename}`;
-    }
+    const logoUrl = logoFile
+      ? `${process.env.BASE_URL}/uploads/${logoFile.filename}`
+      : null;
 
     const group = await groupRepo.createGroup({
       name,
-      members, 
+      members,
       createdBy: encryptedCreatorId,
       logo: logoUrl,
     });
@@ -44,7 +75,7 @@ const createGroup = async (req, res) => {
       res
     );
   } catch (err) {
-    console.error("Create group error:", err.message);
+    console.error("Create group error:", err);
     return responseHandler.badRequest(res, err.message);
   }
 };
