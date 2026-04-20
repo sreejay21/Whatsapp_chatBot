@@ -14,7 +14,7 @@ const updateUserName = async (userId, name) => {
 
 const listUsers = async ({ page = 1, limit = 20 } = {}) => {
   const skip = (page - 1) * limit;
-  const filter = { source: "WHATSAPP" };
+  const filter = { source: "WHATSAPP", isDeleted: false };
 
   const [users, total] = await Promise.all([
     WhatsappUser.find(filter)

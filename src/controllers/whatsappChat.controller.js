@@ -93,7 +93,7 @@ const getWhatsappChatWindowStatus = async (req, res) => {
       );
     };
 
-    // ❗ Validation
+    // Validation
     if (!encryptedPhone && !groupId) {
       return responseHandler.badRequest(
         "encryptedPhone or groupId is required",

@@ -4,9 +4,18 @@ const { encrypt } = require("../crypto/crypto.util");
 
 const createGroup = async (req, res) => {
   try {
-    const { name, members } = req.body;
+    const { name } = req.body;
+    let { members } = req.body;
     const logoFile = req.file;
 
+    try {
+      members = JSON.parse(members);
+      if (!Array.isArray(members)) {
+        throw new Error("Members must be an array");
+      }
+    } catch (err) {
+      return responseHandler.badRequest(res, "Members must be valid JSON array");
+    }
 
     const encryptedCreatorId = encrypt(req.user.nameid);
 
@@ -17,7 +26,7 @@ const createGroup = async (req, res) => {
 
     const group = await groupRepo.createGroup({
       name,
-      members,            
+      members, 
       createdBy: encryptedCreatorId,
       logo: logoUrl,
     });

@@ -23,6 +23,7 @@ const whatsappUserSchema = new mongoose.Schema(
       type: String,
       enum: ["WHATSAPP", "TELEGRAM", "SLACK"],
     },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

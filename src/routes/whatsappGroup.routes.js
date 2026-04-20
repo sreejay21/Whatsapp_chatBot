@@ -34,26 +34,21 @@ const whatsappGroupMessageController = require("../controllers/whatsappGroupMess
  *                 example: Team Chat
  *
  *               members:
- *                 type: array
- *                 description: List of members to be added to the group
- *                 items:
- *                   type: object
- *                   required:
- *                     - userId
- *                     - name
- *                     - source
- *                   properties:
- *                     userId:
- *                       type: string
- *                       description: External user identifier (WhatsApp/Slack/etc)
- *                       example: U0A1L9VE9B3
- *                     name:
- *                       type: string
- *                       example: John Doe
- *                     source:
- *                       type: string
- *                       enum: [WHATSAPP, TELEGRAM, SLACK]
- *                       example: WHATSAPP
+ *                 type: string
+ *                 description: JSON string of members array
+ *                 example: >
+ *                   [
+ *                     {
+ *                       "userId": "encrypted_user_id_1 ",
+ *                       "name": "User1",
+ *                       "source": "WHATSAPP"
+ *                     },
+ *                     {
+ *                       "userId": "encrypted_user_id_2 ",
+ *                       "name": "User2",
+ *                       "source": "WHATSAPP"
+ *                     }
+ *                   ]
  *
  *               logo:
  *                 type: string
@@ -85,11 +80,17 @@ const whatsappGroupMessageController = require("../controllers/whatsappGroupMess
  *                       example: 3
  *
  *       400:
- *         description: Bad request - validation error
- *       401:
- *         description: Unauthorized
+ *         description: Bad request - missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post(
   "/create-groupChat",

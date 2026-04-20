@@ -38,6 +38,7 @@ const whatsappGroupSchema = new mongoose.Schema(
       required: true,
     },
     logo: { type: String, default: null },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

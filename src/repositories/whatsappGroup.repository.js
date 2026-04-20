@@ -65,12 +65,14 @@ const createGroup = async ({ name, members, createdBy, logo }) => {
 const listAllGroups = async ({ page, limit }) => {
   const skip = (page - 1) * limit;
 
+  const query = { isDeleted: false };
+
   const groups = await whatsappGroup
-    .find()
+    .find(query)
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 })
-    .select("name members createdBy createdAt logo")
+    .sort({ createdAt: -1, })
+    .select("name members createdBy createdAt logo isDeleted")
    .populate({
     path: "members.userId",
     select: "encryptedPhone",
