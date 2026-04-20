@@ -64,27 +64,42 @@ const listAllGroups = async (req, res) => {
       groupName: group?.name,
       logo: group?.logo,
       membersCount: group?.members?.length || 0,
-      members: group.members.map((member) => ({
-        userId: encrypt(member.userId._id.toString()), 
-        encryptedPhone: member.userId.encryptedPhone || '', 
-        name: member?.name || '',
-        role: member?.role || '',
-        source: member?.source || '',
-      })),
+
+      members: group.members.map((member) => {
+        const isWhatsapp = member.source === "WHATSAPP";
+
+        return {
+          userId: isWhatsapp
+            ? encrypt(member.userRefId?.toString())
+            : member.userId, 
+
+          name: member?.name || "",
+          role: member?.role || "",
+          source: member?.source || "",
+
+          // optional extra info for WhatsApp only
+          encryptedPhone: isWhatsapp
+            ? member?.userRefId?.encryptedPhone || ""
+            : "",
+        };
+      }),
+
       createdAt: group.createdAt,
     }));
-
 
     return responseHandler.Ok(
       {
         groups,
         pagination: result.pagination,
       },
-      res,
+      res
     );
   } catch (err) {
     console.error("List all groups error:", err);
-    return responseHandler.internalServerError(res, "Failed to fetch groups");
+    return responseHandler.internalServerError(
+      res,
+      "Failed to fetch groups"
+    );
   }
 };
 

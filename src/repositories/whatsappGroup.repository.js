@@ -5,61 +5,84 @@ const { decrypt } = require("../crypto/crypto.util");
 const createGroup = async ({ name, members, createdBy, logo }) => {
   const creatorId = decrypt(createdBy);
   const creatorUser = await WhatsappUser.findById(creatorId);
-  const memberUsers = await Promise.all(
+
+  if (!creatorUser) {
+    throw new Error("Creator not found");
+  }
+
+  const processedMembers = await Promise.all(
     members.map(async (member) => {
-      const source = member.source || "WHATSAPP";
+      const source = member.source?.toUpperCase();
 
       if (source === "WHATSAPP") {
         const decryptedUserId = decrypt(member.userId);
-        const existingUser = await WhatsappUser.findById(decryptedUserId);
-        return existingUser;
+        const user = await WhatsappUser.findById(decryptedUserId);
+
+        if (!user) return null;
+
+        return {
+          userId: user._id.toString(),   // string now safe
+          userRefId: user._id,
+          name: user.name,
+          source,
+        };
       }
 
-
-      return WhatsappUser.findOneAndUpdate(
-        {
-          externalUserId: member.userId,
-        },
-        {
-          $setOnInsert: {
-            externalUserId: member.userId,
-            name: member.name,
-            source,
-          },
-        },
-        {
-          new: true,
-          upsert: true,
-        }
-      );
+      // TELEGRAM / SLACK
+      const user = await WhatsappUser.findOneAndUpdate(
+  {
+    externalUserId: member.userId,
+    source: source, // 👈 IMPORTANT FIX
+  },
+  {
+    $setOnInsert: {
+      externalUserId: member.userId,
+      name: member.name,
+      source,
+    },
+  },
+  { new: true, upsert: true }
+);
+      return {
+        userId: member.userId,   
+        userRefId: user._id,
+        name: member.name,
+        source,
+      };
     })
   );
 
+  const validMembers = processedMembers.filter(Boolean);
+
   const groupMembers = [
     {
-      userId: creatorUser._id,
+      userId: creatorUser._id.toString(),
+      userRefId: creatorUser._id,
       name: creatorUser.name,
       role: "ADMIN",
       source: creatorUser.source,
     },
-    ...memberUsers
-      .filter(user => user && !user._id.equals(creatorUser._id))
-      .map(user => ({
-        userId: user._id,
-        name: user.name,
+
+    ...validMembers
+      .filter((m) => m.userId !== creatorUser._id.toString())
+      .map((m) => ({
+        userId: m.userId,
+        userRefId: m.userRefId,
+        name: m.name,
         role: "MEMBER",
-        source: user.source,
+        source: m.source,
       })),
   ];
 
-  return whatsappGroup.create({
+  const group = await whatsappGroup.create({
     name,
     members: groupMembers,
     createdBy: creatorUser._id,
     logo,
   });
-};
 
+  return group;
+};
 
 
 const listAllGroups = async ({ page, limit }) => {
@@ -71,14 +94,23 @@ const listAllGroups = async ({ page, limit }) => {
     .find(query)
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1, })
+    .sort({ createdAt: -1 })
     .select("name members createdBy createdAt logo isDeleted")
-   .populate({
-    path: "members.userId",
-    select: "encryptedPhone",
-  });
+    .lean(); 
 
-  const total = await whatsappGroup.countDocuments();
+  const total = await whatsappGroup.countDocuments(query);
+
+
+  for (const group of groups) {
+    for (const member of group.members) {
+      if (member.source === "WHATSAPP" && member.userRefId) {
+        const user = await WhatsappUser.findById(member.userRefId)
+          .select("encryptedPhone name");
+
+        member.user = user || null;
+      }
+    }
+  }
 
   return {
     groups,

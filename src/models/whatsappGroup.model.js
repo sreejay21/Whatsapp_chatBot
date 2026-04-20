@@ -6,11 +6,17 @@ const whatsappGroupSchema = new mongoose.Schema(
 
     members: [
       {
-        _id: false, 
+        _id: false,
+
         userId: {
+          type: String, 
+          required: true,
+        },
+
+        userRefId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "WhatsappUser",
-          required: true,
+          default: null,
         },
 
         name: {
