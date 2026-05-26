@@ -11,12 +11,12 @@ const SendOtpRequest = {
     countryCode: {
       type: 'string',
       description: 'Country code',
-      example: '91'
+      example: '+91'
     },
     phoneNumber: {
       type: 'string',
       description: 'User phone number',
-      example: '8412980663'
+      example: '1234567891'
     }
   }
 };
