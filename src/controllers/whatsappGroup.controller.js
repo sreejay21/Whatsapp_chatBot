@@ -10,6 +10,7 @@ const createGroup = async (req, res) => {
   try {
     const { name } = req.body;
     const logoFile = req.file;
+    const allowedSources = ["WHATSAPP", "TELEGRAM", "SLACK"];
 
     let members;
 
@@ -23,7 +24,7 @@ const createGroup = async (req, res) => {
       return responseHandler.badRequest(res, "At least one member is required");
     }
 
-    const allowedSources = ["WHATSAPP", "TELEGRAM", "SLACK"];
+    
 
     members = members.map((m, index) => {
       if (!m.userId && !m.externalUserId) {

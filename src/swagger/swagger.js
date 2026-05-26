@@ -1,5 +1,6 @@
 const swaggerJsdoc = require("swagger-jsdoc");
 const path = require("path");
+const schemas = require("./schema");
 
 const options = {
   definition: {
@@ -16,7 +17,7 @@ const options = {
     // ✅ Server controlled by ENV (localhost by default)
     servers: [
       {
-        url: "https://ritrowaapidev.azurewebsites.net",
+        url: "http://localhost:3000",
         description: "Active API server",
       },
     ],
@@ -351,6 +352,7 @@ const options = {
             },
           },
         },
+        ...schemas,
       },
     },
   },
