@@ -1,5 +1,6 @@
 const telegramAuth = require('../services/telegram/telegram.service')
 const response = require('../helpers/response.helper')
+const  {encrypt, decrypt}  = require('../crypto/crypto.util')
 
 
 // OTP sending handler
@@ -11,10 +12,13 @@ try {
 
     const result =await telegramAuth.sendOtp(fullPhoneNumber)
 
-    req.session.telegramAuth =result
-
-    return response.Ok({message:'OTP sent successfully'},res)
-
+    return response.Ok({
+      message: 'OTP sent successfully',
+      data: {
+        phoneNumber: encrypt(result.phoneNumber),
+        phoneCodeHash: encrypt(result.phoneCodeHash)
+      }
+    }, res)
   } 
   catch (err) {
   return response.internalServerError(res,err.message)
@@ -26,15 +30,16 @@ try {
 const verifyOtp = async (req,res) => {
 try {
 
-    const { code } =req.body
+    const { code,
+      phoneNumber,
+      phoneCodeHash
 
-    const authData =req.session.telegramAuth
+     } =req.body
 
-    if (!authData) {
-     return response.badRequest(res,'OTP session expired')
-    }
+    const decryptedPhoneNumber = decrypt(phoneNumber)
+    const decryptedPhoneCodeHash = decrypt(phoneCodeHash)
 
-    const result =await telegramAuth.verifyOtp(authData.phoneNumber,authData.phoneCodeHash,code)
+    const result =await telegramAuth.verifyOtp(decryptedPhoneNumber,decryptedPhoneCodeHash,code)
 
     return response.Ok({message:'OTP verified successfully'},res)
   } 
