@@ -7,7 +7,12 @@ const fetchChats = async () => {
 
     return dialogs.map(dialog => ({
       id: dialog.id,
-
+      name: dialog.name,
+      message: dialog.message,
+      time: dialog.timestamp,
+      avatar: dialog.avatar,
+      isOnline: dialog.isOnline,
+      hasUnreadMessages: dialog.hasUnreadMessages,
       title:
         dialog.title ||
         dialog.name ||
