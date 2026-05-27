@@ -65,7 +65,26 @@ const handleInteractiveMessage = async (messages) => {
   }
 };
 
+const enums={
+  interactiveTypes: {
+    list_reply: 'list_reply',
+    button_reply: 'button_reply'
+  },
+  userTypes: {
+    whatsapp: 'WhatsApp',
+    telegram: 'Telegram',
+    slack: 'Slack'
+  },
+  messageTypes: {
+    text: 'text',
+    image: 'image',
+    document: 'document'
+  }
+  
+}
+
 module.exports={
     handleInteractiveMessage,
-    handleTextMessage
+    handleTextMessage,
+    enums
 }

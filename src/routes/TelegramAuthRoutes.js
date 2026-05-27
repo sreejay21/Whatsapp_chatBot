@@ -11,7 +11,7 @@ const { otpLimiter } = require('../middleware/RateLimitMiddleware');
  *     summary: Send OTP to user's phone number
  *     description: Sends a one-time password (OTP) to the provided phone number for authentication
  *     tags:
- *       - Authentication
+ *       - Telegram Authentication
  *     requestBody:
  *       required: true
  *       content:
@@ -53,7 +53,7 @@ router.post('/send-otp', otpLimiter, sendOtpValidation, ValidationMiddleware, Te
  *     summary: Verify OTP and authenticate user
  *     description: Verifies the OTP sent to user's phone number and returns authentication token
  *     tags:
- *       - Authentication
+ *       - Telegram Authentication
  *     requestBody:
  *       required: true
  *       content:

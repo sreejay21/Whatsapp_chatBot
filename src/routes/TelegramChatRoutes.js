@@ -10,7 +10,7 @@ const telegramChatController = require('../controllers/TelegramChatController');
  *     summary: Get all user chats
  *     description: Retrieves a list of all chats for the authenticated user
  *     tags:
- *       - Chats
+ *       - Telegram Chats
  *     security:
  *       - BearerAuth: []
  *     responses:
