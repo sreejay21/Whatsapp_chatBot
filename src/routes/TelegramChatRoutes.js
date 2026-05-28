@@ -13,6 +13,19 @@ const  authenticateMiddleware  = require('../middleware/authendicationMiddleware
  *       - Telegram Chats
  *     security:
  *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           description: Number of chats per page for pagination
  *     responses:
  *       200:
  *         description: Chats retrieved successfully
