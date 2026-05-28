@@ -53,12 +53,13 @@ const getAllChats = async (sessionString) => {
 
 const getMessages = async ({ sessionString, chatId, limit = 100 }) => {
   const client = await getClient(sessionString);
+  await client.getDialogs();
+  const entity = await client.getEntity(chatId);
 
-  return await client.getMessages(chatId, {
+  return await client.getMessages(entity, {
     limit,
   });
 };
-
 const getAuthenticatedClient = async (sessionString) => {
   return await getClient(sessionString);
 };

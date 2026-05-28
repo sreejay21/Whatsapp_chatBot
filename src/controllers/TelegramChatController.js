@@ -10,13 +10,13 @@ const getChats = async (req, res) => {
     const page = Number.parseInt(req.query.page) || 1;
     const limit = Number.parseInt(req.query.limit) || 20;
     const userId = req.user.userId;
-    const chats = await telegramRepository.fetchChats({
+    const data = await telegramRepository.fetchChats({
       userId,
       page,
       limit,
     });
 
-    return response.Ok(chats, res);
+    return response.Ok(data, res);
   } catch (err) {
     return response.internalServerError(res, err.message);
   }
@@ -43,6 +43,7 @@ const syncSelectedChats = async (req, res) => {
     for (const chatId of chatIds) {
       const messages = await telegramAuth.getMessages({
         client,
+        sessionString: decrypt(user.telegramSession),
         chatId,
         limit: 100,
       });
