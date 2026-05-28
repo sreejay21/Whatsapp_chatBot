@@ -112,6 +112,75 @@ router.get('/listChats', authenticateMiddleware, telegramChatController.getChats
  */
 router.post("/syncSelectedChats",authenticateMiddleware,telegramChatController.syncSelectedChats);
 
+/**
+ * @swagger
+ * /api/chats/listSyncedChats:
+ *   get:
+ *     summary: Get synced chats from database
+ *     description: Retrieves synced Telegram chats stored in database for authenticated user
+ *     tags:
+ *       - Telegram Chats
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Number of chats per page
+ *
+ *     responses:
+ *       200:
+ *         description: Synced chats retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *
+ *                 responsecode:
+ *                   type: number
+ *                   example: 200
+ *
+ *                 result:
+ *                   type: object
+ *                   properties:
+ *
+ *                     chats:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Chat'
+ *
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedResponse'
+ *
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/InternalServerErrorResponse'
+ */
+router.get('/listSyncedChats',authenticateMiddleware,telegramChatController.listSyncedChats);
+
 
 
 module.exports = router;

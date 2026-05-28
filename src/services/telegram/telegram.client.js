@@ -6,7 +6,7 @@ const apiHash = process.env.TELEGRAM_API_HASH;
 
 const clients = new Map();
 
-const getClient = async (sessionString = "") => {
+const getClient = async (sessionString) => {
   if (clients.has(sessionString)) {
     return clients.get(sessionString);
   }

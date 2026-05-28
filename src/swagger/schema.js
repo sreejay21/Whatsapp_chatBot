@@ -17,7 +17,8 @@ const {
 const {
   Chat,
   GetChatsResponse,
-  ChatErrorResponse
+  ChatErrorResponse,
+  Pagination
 } = require('./swaggerSchemas/chatSchema');
 
 const {
@@ -45,6 +46,7 @@ const schemas = {
   Chat,
   GetChatsResponse,
   ChatErrorResponse,
+  Pagination,
 
   // Common Schemas
   BadRequestResponse,
