@@ -1,59 +1,72 @@
-const { Api } =require('telegram')
-const {getClient} = require('./telegram.client')
-
-
-
+const { Api } = require("telegram");
+const { getClient } = require("./telegram.client");
 
 const sendOtp = async (fullPhoneNumber) => {
+  const client = await getClient();
 
-  const client =await getClient()
+  const result = await client.sendCode(
+    {
+      apiId: Number(process.env.TELEGRAM_API_ID),
+      apiHash: process.env.TELEGRAM_API_HASH,
+    },
+    fullPhoneNumber,
+  );
 
-  const result =await client.sendCode(
-      {apiId: Number(process.env.TELEGRAM_API_ID),apiHash:process.env.TELEGRAM_API_HASH},fullPhoneNumber)
-
-  return {phoneNumber: fullPhoneNumber,phoneCodeHash:result.phoneCodeHash}
-}
-
+  return {
+    phoneNumber: fullPhoneNumber,
+    phoneCodeHash: result.phoneCodeHash,
+  };
+};
 
 const verifyOtp = async (fullPhoneNumber, phoneCodeHash, code) => {
-  const client = await getClient()
+  const client = await getClient();
 
   try {
     const result = await client.invoke(
       new Api.auth.SignIn({
         phoneNumber: fullPhoneNumber,
         phoneCodeHash,
-        phoneCode: code
-      })
-    )
+        phoneCode: code,
+      }),
+    );
 
-    const sessionString = client.session.save()
+    const sessionString = client.session.save();
 
     return {
       user: result.user,
-      sessionString
-    }
-
+      sessionString,
+    };
   } catch (error) {
-
-    if (error.errorMessage === 'SESSION_PASSWORD_NEEDED') {
-      return { requiresPassword: true }
+    if (error.errorMessage === "SESSION_PASSWORD_NEEDED") {
+      return { requiresPassword: true };
     }
 
-    throw error
+    throw error;
   }
-}
+};
 
 const getAllChats = async (sessionString) => {
+  const client = await getClient(sessionString);
 
-  const client = await getClient(sessionString)
+  return await client.getDialogs({});
+};
 
-  return await client.getDialogs({})
-}
+const getMessages = async ({ sessionString, chatId, limit = 100 }) => {
+  const client = await getClient(sessionString);
 
+  return await client.getMessages(chatId, {
+    limit,
+  });
+};
+
+const getAuthenticatedClient = async (sessionString) => {
+  return await getClient(sessionString);
+};
 
 module.exports = {
   sendOtp,
   verifyOtp,
-  getAllChats
-}
+  getAllChats,
+  getMessages,
+  getAuthenticatedClient,
+};
