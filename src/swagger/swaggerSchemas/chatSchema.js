@@ -6,90 +6,174 @@
 const Chat = {
   type: 'object',
   title: 'Chat',
+
   properties: {
+
     id: {
       type: 'string',
-      example: 'chat_12345'
+      example: '121212'
     },
-    title: {
+
+    name: {
       type: 'string',
-      example: 'General Chat'
+      example: 'John Doe'
     },
-    type: {
-      type: 'string',
-      enum: ['private', 'group', 'supergroup', 'channel'],
-      example: 'private'
-    },
+
     lastMessage: {
       type: 'string',
       example: 'Last message text'
     },
+
+    messageId: {
+      type: 'integer',
+      example: 15725
+    },
+
+    lastMessageTime: {
+      type: 'integer',
+      example: 1779298260
+    },
+
+    hasMedia: {
+      type: 'boolean',
+      example: true
+    },
+
+    mediaType: {
+      type: 'string',
+      nullable: true,
+      example: 'MessageMediaDocument'
+    },
+
+    avatar: {
+      type: 'string',
+      nullable: true,
+      example: null
+    },
+
+    isOnline: {
+      type: 'boolean',
+      example: false
+    },
+
+    hasUnreadMessages: {
+      type: 'boolean',
+      example: false
+    },
+
+    isUser: {
+      type: 'boolean',
+      example: true
+    },
+
+    isGroup: {
+      type: 'boolean',
+      example: false
+    },
+
+    isChannel: {
+      type: 'boolean',
+      example: false
+    },
+
     unreadCount: {
       type: 'integer',
-      example: 5
-    },
-    createdAt: {
-      type: 'string',
-      format: 'date-time',
-      example: '2024-05-26T10:30:00Z'
+      example: 0
     }
   }
-};
+}
+
+const Pagination = {
+  type: 'object',
+  title: 'Pagination',
+
+  properties: {
+
+    total: {
+      type: 'integer',
+      example: 278
+    },
+
+    page: {
+      type: 'integer',
+      example: 1
+    },
+
+    limit: {
+      type: 'integer',
+      example: 20
+    },
+
+    totalPages: {
+      type: 'integer',
+      example: 14
+    }
+  }
+}
 
 const GetChatsResponse = {
   type: 'object',
   title: 'GetChatsResponse',
+
   properties: {
-    success: {
+
+    status: {
       type: 'boolean',
       default: true
     },
+
     responsecode: {
       type: 'number',
       default: 200
     },
-    message: {
-      type: 'string',
-      example: 'Chats retrieved successfully'
-    },
+
     result: {
       type: 'object',
+
       properties: {
-        totalCount: {
-          type: 'number'
-        },
-        data: {
+
+        chats: {
           type: 'array',
+
           items: {
             $ref: '#/components/schemas/Chat'
           }
+        },
+
+        pagination: {
+          $ref: '#/components/schemas/Pagination'
         }
       }
     }
   }
-};
+}
 
 const ChatErrorResponse = {
   type: 'object',
   title: 'ChatErrorResponse',
+
   properties: {
-    success: {
+
+    status: {
       type: 'boolean',
       default: false
     },
+
     responsecode: {
       type: 'number',
       example: 400
     },
-    message: {
+
+    error: {
       type: 'string',
       example: 'Error message'
     }
   }
-};
+}
 
 module.exports = {
   Chat,
+  Pagination,
   GetChatsResponse,
   ChatErrorResponse
-};
+}

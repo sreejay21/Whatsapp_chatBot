@@ -101,7 +101,11 @@ const VerifyOtpResponse = {
         message: {
           type: 'string',
           example: 'OTP verified successfully'
-        }
+        },
+        token: {
+          type: 'string',
+          description: 'JWT token for authenticated user'
+        } 
       }
     }
   }

@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-
 const telegramChatController = require('../controllers/TelegramChatController');
+const  authenticateMiddleware  = require('../middleware/authendicationMiddleware')
 
 /**
  * @swagger
- * /api/chats/chats:
+ * /api/chats/listChats:
  *   get:
  *     summary: Get all user chats
  *     description: Retrieves a list of all chats for the authenticated user
@@ -39,6 +39,6 @@ const telegramChatController = require('../controllers/TelegramChatController');
  *             schema:
  *               $ref: '#/components/schemas/InternalServerErrorResponse'
  */
-router.get('/chats', telegramChatController.getChats);
+router.get('/listChats', authenticateMiddleware, telegramChatController.getChats);
 
 module.exports = router;

@@ -1,35 +1,33 @@
-const { TelegramClient } = require("telegram");
-const { StringSession } = require("telegram/sessions");
+const { TelegramClient } = require('telegram')
+const { StringSession } = require('telegram/sessions')
 
-const apiId = Number(process.env.TELEGRAM_API_ID);
+const apiId = Number(process.env.TELEGRAM_API_ID)
 
-const apiHash =
-  process.env.TELEGRAM_API_HASH;
+const apiHash =process.env.TELEGRAM_API_HASH
 
-const stringSession =
-  new StringSession("");
+const clients = new Map()
 
-let client = null;
+const getClient = async (sessionString = '') => {
 
-const getClient = async () => {
-
-  if (!client) {
-
-    client = new TelegramClient(
-      stringSession,
-      apiId,
-      apiHash,
-      {
-        connectionRetries: 5,
-        useWSS: true
-      }
-    );
-
-    await client.connect();
-
+  if (clients.has(sessionString)) {
+    return clients.get(sessionString)
   }
 
-  return client;
-};
+  const client = new TelegramClient(
+    new StringSession(sessionString),
+    apiId,
+    apiHash,
+    {
+      connectionRetries: 5,
+      useWSS: true
+    }
+  )
 
-module.exports = { getClient };
+  await client.connect()
+
+  clients.set(sessionString, client)
+
+  return client
+}
+
+module.exports = { getClient }

@@ -26,8 +26,25 @@ const findByPhoneAndUserType = async (
   })
 }
 
+const updateUser = async (userId, updateData) => {
+  return await User.findByIdAndUpdate(
+    userId,
+    updateData,
+    { new: true }
+  )
+}
+
+const findById = async (userId) => {
+  return await User.findOne({
+    externalUserId: userId,
+    isDeleted: false
+  })
+}
+
 module.exports = {
   findByExternalUserIdAndType,
   createUser,
-  findByPhoneAndUserType
+  findByPhoneAndUserType,
+  findById,
+  updateUser
 }

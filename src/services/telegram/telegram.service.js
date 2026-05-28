@@ -1,6 +1,6 @@
 const { Api } =require('telegram')
-
 const {getClient} = require('./telegram.client')
+
 
 
 
@@ -15,33 +15,38 @@ const sendOtp = async (fullPhoneNumber) => {
 }
 
 
-const verifyOtp = async (fullPhoneNumber,phoneCodeHash,code) => {
-
-  const client =await getClient()
+const verifyOtp = async (fullPhoneNumber, phoneCodeHash, code) => {
+  const client = await getClient()
 
   try {
+    const result = await client.invoke(
+      new Api.auth.SignIn({
+        phoneNumber: fullPhoneNumber,
+        phoneCodeHash,
+        phoneCode: code
+      })
+    )
 
-    const result =await client.invoke(new Api.auth.SignIn({phoneNumber: fullPhoneNumber,phoneCodeHash,phoneCode: code}))
-    return result
+    const sessionString = client.session.save()
 
-} catch (error) {
+    return {
+      user: result.user,
+      sessionString
+    }
 
-    if (error.errorMessage ===
-      'SESSION_PASSWORD_NEEDED'
-    ) {
+  } catch (error) {
 
-      return {
-        requiresPassword: true
-      }
+    if (error.errorMessage === 'SESSION_PASSWORD_NEEDED') {
+      return { requiresPassword: true }
     }
 
     throw error
   }
 }
 
-const getAllChats = async () => {
+const getAllChats = async (sessionString) => {
 
-  const client = await getClient()
+  const client = await getClient(sessionString)
 
   return await client.getDialogs({})
 }

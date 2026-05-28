@@ -48,6 +48,12 @@ createdAt: {
 updatedAt: {
     type: Date,
     default: Date.now
+},
+telegramUserId: String,
+telegramSession: String,   
+telegramAuthState: {
+  isAuthenticated: Boolean,
+  lastLoginAt: Date
 }
 
 })
