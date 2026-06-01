@@ -18,7 +18,7 @@ const fetchChats = async ({ page, limit, userId }) => {
     const endIndex = startIndex + limit;
     const paginatedDialogs = dialogs.slice(startIndex, endIndex);
 
-    const chats = paginatedDialogs.map((dialog) => {
+    const data = paginatedDialogs.map((dialog) => {
       const msg = dialog.message;
 
       return {
@@ -46,7 +46,7 @@ const fetchChats = async ({ page, limit, userId }) => {
     });
 
     return {
-      chats,
+      data,
       pagination: {
         total: totalChats,
         page,

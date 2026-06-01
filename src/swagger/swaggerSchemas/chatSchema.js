@@ -132,7 +132,7 @@ const GetChatsResponse = {
 
       properties: {
 
-        chats: {
+        data: {
           type: 'array',
 
           items: {
